@@ -1,0 +1,49 @@
+{
+  "name": "commonwealthio",
+  "version": "1.0.0",
+  "description": "��#\u0000 \u0000s\u0000u\u0000b\u0000a\u0000t\u0000o\u0000m\u0000i\u0000c\u0000W\u0000a\u0000r\u0000\r\u0000 \u0000",
+  "main": "index.js",
+  "scripts": {
+    "develop": "cross-env NODE_ENV=development node src/server/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sebitommy123/subatomicWar.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/sebitommy123/subatomicWar/issues"
+  },
+  "homepage": "https://github.com/sebitommy123/subatomicWar#readme",
+  "dependencies": {
+    "express": "^4.17.2",
+    "html-webpack-plugin": "^5.5.0",
+    "joi": "^17.5.0",
+    "lodash": "^4.17.21",
+    "nanoid": "^3.1.30",
+    "sanitize-html": "^2.6.1",
+    "socket.io": "^4.4.0",
+    "socket.io-client": "^4.4.0",
+    "throttle-debounce": "^3.0.1",
+    "webpack": "^5.65.0",
+    "webpack-dev-middleware": "^5.3.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.16.5",
+    "@babel/preset-env": "^7.16.5",
+    "babel-eslint": "^10.1.0",
+    "babel-loader": "^8.2.3",
+    "cross-env": "^7.0.3",
+    "css-loader": "^6.5.1",
+    "css-minimizer-webpack-plugin": "^3.3.1",
+    "eslint": "^8.5.0",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-plugin-import": "^2.25.3",
+    "eslint-plugin-jest": "^25.3.0",
+    "jest": "^27.4.5",
+    "mini-css-extract-plugin": "^2.4.5",
+    "webpack-cli": "^4.9.1",
+    "webpack-merge": "^5.8.0"
+  }
+}

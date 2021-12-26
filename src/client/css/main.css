@@ -1,0 +1,74 @@
+html, body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  overscroll-behavior: none;
+  background-color: black;
+  font-family: Verdana, Geneva, Tahoma, sans-serif;
+}
+
+#canvas {
+  width: 100%;
+  height: 100%;
+}
+
+.fadedBackground {
+
+  display: none;
+  position: fixed;
+  top: 0px;
+  left: 0px;
+  width: 100%;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.7);
+
+}
+
+.fadedBackground.active {
+  display: flex;
+}
+
+.fadedBackground .startBox {
+  
+  background-color: #eee;
+  padding: 15px;
+
+}
+
+.fadedBackground .title {
+
+  font-size: 23px;
+  text-align: center;
+  margin-bottom: 15px;
+
+}
+
+.nameInput .nameInputText {
+  margin-bottom: 5px;
+}
+
+.nameInput input {
+
+  padding: 5px;
+  font-size: 15px;
+  border: 1px solid black;
+
+}
+
+.startButton {
+
+  text-align: center;
+
+}
+
+.startButton button {
+
+  font-size: 21px;
+  background-color: white;
+  border: 1px solid black;
+  margin-top: 15px;
+  cursor: pointer;
+
+}
