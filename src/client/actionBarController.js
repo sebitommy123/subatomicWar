@@ -1,5 +1,6 @@
+import React from 'react';
 import reactDOM from 'react-dom';
-import actionBar from './actionBar/actionBar';
+import actionBar, { setRActionBarState } from './actionBar/actionBar';
 
 const actionBarWrapper = document.getElementById('actionBar');
 const actionBarContent = document.getElementById('actionBarContent'); 
@@ -10,10 +11,12 @@ export function setActionBarState(newState) {
   } else {
     actionBarWrapper.style.display = "flex";
   }
+
+  setRActionBarState(newState);
 }
 
 export function hydrateActionBar() {
 
-  reactDOM.render(actionBar(), actionBarContent);
+  reactDOM.render(React.createElement(actionBar), actionBarContent);
 
 }

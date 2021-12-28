@@ -15,7 +15,10 @@ class Lobby {
       gridDimensions: {
         width: 15,
         height: 15
-      }
+      },
+      waitTime: 15,
+      startingGold: 0,
+      goldPerDay: 5,
     };
 
   }

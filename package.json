@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "��#\u0000 \u0000s\u0000u\u0000b\u0000a\u0000t\u0000o\u0000m\u0000i\u0000c\u0000W\u0000a\u0000r\u0000\r\u0000 \u0000",
   "main": "index.js",
+  "private": true,
   "scripts": {
     "develop": "cross-env NODE_ENV=development node src/server/index.js"
   },

@@ -12,6 +12,8 @@ export default class BetterCtx {
 
     this.lastRect = null;
     this.lastCircle = null;
+
+    ctx.imageSmoothingEnabled = false
   }
 
   get abs() {

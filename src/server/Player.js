@@ -2,11 +2,13 @@ const { nanoid } = require('nanoid');
 
 class Player {
 
-  constructor(socket) {
+  constructor(game, socket, color, gold) {
     this.id = nanoid();
     this.socket = socket;
+    this.game = game;
 
-    this.color = "#" + Math.floor(Math.random() * 16777215).toString(16);
+    this.gold = gold;
+    this.color = color;
   }
 
   get name() {
@@ -18,6 +20,13 @@ class Player {
       id: this.id,
       name: this.name,
       color: this.color,
+    };
+  }
+
+  toClientSelf() {
+    return {
+      ...this.toClient(),
+      gold: this.gold,
     };
   }
 

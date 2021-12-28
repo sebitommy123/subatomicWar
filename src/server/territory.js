@@ -14,6 +14,21 @@ function generateEmptyTerritory(width, height) {
 
 }
 
+function getEmptyPositions(territory) {
+
+  let positions = [];
+
+  territory.forEach((row, y) => {
+    row.forEach((playerId, x) => {
+      if (playerId === null) positions.push({ x, y })
+    });
+  });
+
+  return positions;
+
+}
+
 module.exports = {
-  generateEmptyTerritory
+  generateEmptyTerritory,
+  getEmptyPositions
 }

@@ -21,6 +21,18 @@ function temporaryInit() {
 
 function handleSocketConnection(socket) {
 
+  const lobby = new Lobby();
+
+  socket.setState({ screen: "playMenu", name: htmlentities("input.name"), lobbyAvailable: null });
+
+  lobby.addSocket(socket);
+
+  lobby.config.waitTime = 3;
+
+  startGameFromLobby(lobby);
+
+  return;    
+
   socket.setState({
     screen: "nameMenu",
   });
@@ -33,7 +45,7 @@ function handleSocketConnection(socket) {
       name: Joi.string().min(3).max(20).required(),
     }),
     respond: input => {
-      socket.setState({ screen: "playMenu", name: htmlentities(input.name,), lobbyAvailable: lobbies.length != 0 ? lobbies[0].id : null });
+      socket.setState({ screen: "playMenu", name: htmlentities(input.name), lobbyAvailable: lobbies.length != 0 ? lobbies[0].id : null });
       socket.emitState();
     },
   });
@@ -46,9 +58,15 @@ function handleSocketConnection(socket) {
     }),
     respond: input => {
       const lobby = getLobbyById(input.lobbyId);
-      if (lobby) {
-        lobby.addSocket(socket);
+      if (!lobby) {
+        socket.emitError("Lobby not found");
+        return;
       }
+      if (!lobby.open) {
+        socket.emitError("Lobby is closed");
+        return;
+      }
+      lobby.addSocket(socket);
     },
   });
 

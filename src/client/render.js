@@ -9,7 +9,7 @@ import { mouseInRect } from './utils';
 import { emit } from './networking';
 
 import Constants from '../shared/constants';
-import { getById, getMe } from './state';
+import { getById, getInternalState, getMe, mutateInternalState, flipNeighborList, clockwiseDir, getTerritoryDirFrom, getTerritoryDirPositionFrom } from './state';
 
 let renderingState;
 export const canvas = document.getElementById('canvas');
@@ -18,6 +18,7 @@ export const ctx = new BetterCtx(canvas.getContext('2d'));
 export const RenderConstants = Object.freeze({
   CELL_WIDTH: 100,
   CELL_HEIGHT: 100,
+  SIDE_SIZE: () => 7 / ctx.zoom
 });
 
 let clickHandler = null;
@@ -28,7 +29,13 @@ function registerClick(handler) {
 
 export function setRenderingState(newState) {
 
+  let lastState = renderingState;
+
   renderingState = newState;
+
+  if (newState.territory && lastState.territory != newState.territory) {
+    recomputeTerritoryNeighbors();
+  }
 
 }
 
@@ -85,6 +92,7 @@ function render() {
 
     if (renderingState.stage === "game") {
       renderUnits();
+      drawQuantityBar();
     }
 
   }
@@ -97,20 +105,163 @@ function render() {
 
 }
 
+function drawQuantityBar() {
+
+  const marginRight = 75;
+  const barWidth = 50;
+
+  const marginTop = 150;
+  const marginBottom = 200;
+
+  const barHeight = canvas.height - marginBottom - marginTop;
+
+  const backgroundPadding = 3;
+  ctx.fillStyle = "#d4f1f9";
+  ctx.abs.fillRect(canvas.width - marginRight - barWidth - backgroundPadding, marginTop - backgroundPadding, barWidth + backgroundPadding*2, barHeight + backgroundPadding*2)
+  
+  ctx.fillStyle = "#404040";
+  ctx.abs.fillRect(canvas.width - marginRight - barWidth, marginTop, barWidth, barHeight);
+
+  const filledPercentage = 0.6;
+  const filledHeight = barHeight * filledPercentage;
+
+  ctx.fillStyle = "#70AD47";
+  ctx.abs.fillRect(canvas.width - marginRight - barWidth, marginTop + (barHeight - filledHeight), barWidth, filledHeight)
+
+  ctx.strokeStyle = "#d4f1f9";
+  ctx.abs.beginPath();
+  ctx.abs.lineWidth = 3;
+  ctx.abs.moveTo(canvas.width - marginRight - barWidth, marginTop + (barHeight - filledHeight));
+  ctx.abs.lineTo(canvas.width - marginRight, marginTop + (barHeight - filledHeight));
+  ctx.abs.stroke();
+
+}
+
+function recomputeTerritoryNeighbors() {
+
+  const { territory, gridDimensions } = renderingState;
+  const { width, height } = gridDimensions;
+
+  mutateInternalState(state => {
+    state.territoryNeighbors = [];
+
+    for (let y = 0; y < height; y++) {
+
+      state.territoryNeighbors.push([]);
+
+      for (let x = 0; x < width; x++) {
+
+        let neighbors = [];
+
+        if (x > 0 && territory[y][x-1] === territory[y][x]) {
+          neighbors.push("left");
+        }
+        if (y > 0 && territory[y-1][x] === territory[y][x]) {
+          neighbors.push("top")
+        }
+        if (x < width - 1 && territory[y][x+1] === territory[y][x]) {
+          neighbors.push("right");
+        }
+        if (y < height - 1 && territory[y+1][x] === territory[y][x]) {
+          neighbors.push("bottom")
+        }
+
+        state.territoryNeighbors[y].push(neighbors);
+
+      }
+    }
+
+  });
+
+}
+
 function renderTerritory() {
 
+  function renderRightSide(x, y) {
+    ctx.fillRect(x * RenderConstants.CELL_WIDTH + RenderConstants.CELL_WIDTH - RenderConstants.SIDE_SIZE(), y * RenderConstants.CELL_HEIGHT, RenderConstants.SIDE_SIZE(), RenderConstants.CELL_HEIGHT);
+  }
+  function renderLeftSide(x, y) {
+    ctx.fillRect(x * RenderConstants.CELL_WIDTH, y * RenderConstants.CELL_HEIGHT, RenderConstants.SIDE_SIZE(), RenderConstants.CELL_HEIGHT);
+  }
+  function renderTopSide(x, y) {
+    ctx.fillRect(x * RenderConstants.CELL_WIDTH, y * RenderConstants.CELL_HEIGHT, RenderConstants.CELL_WIDTH, RenderConstants.SIDE_SIZE());
+  }
+  function renderBottomSide(x, y) {
+    ctx.fillRect(x * RenderConstants.CELL_WIDTH, y * RenderConstants.CELL_HEIGHT + RenderConstants.CELL_HEIGHT - RenderConstants.SIDE_SIZE(), RenderConstants.CELL_WIDTH, RenderConstants.SIDE_SIZE());
+  }
+  
+  function renderLeftTopCorner(x, y) {
+    ctx.fillRect(x * RenderConstants.CELL_WIDTH, y * RenderConstants.CELL_HEIGHT, RenderConstants.SIDE_SIZE(), RenderConstants.SIDE_SIZE());
+  }
+  function renderTopRightCorner(x, y) {
+    ctx.fillRect(x * RenderConstants.CELL_WIDTH + RenderConstants.CELL_WIDTH - RenderConstants.SIDE_SIZE(), y * RenderConstants.CELL_HEIGHT, RenderConstants.SIDE_SIZE(), RenderConstants.SIDE_SIZE());
+  }
+  function renderRightBottomCorner(x, y) {
+    ctx.fillRect(x * RenderConstants.CELL_WIDTH + RenderConstants.CELL_WIDTH - RenderConstants.SIDE_SIZE(), y * RenderConstants.CELL_HEIGHT + RenderConstants.CELL_HEIGHT - RenderConstants.SIDE_SIZE(), RenderConstants.SIDE_SIZE(), RenderConstants.SIDE_SIZE());
+  }
+  function renderBottomLeftCorner(x, y) {
+    ctx.fillRect(x * RenderConstants.CELL_WIDTH, y * RenderConstants.CELL_HEIGHT + RenderConstants.CELL_HEIGHT - RenderConstants.SIDE_SIZE(), RenderConstants.SIDE_SIZE(), RenderConstants.SIDE_SIZE());
+  }
+
   const { players, territory } = renderingState;
+  const { territoryNeighbors } = getInternalState();
 
   territory.forEach((row, y) => {
     row.forEach((playerId, x) => {
-      if (playerId) {
+      if (playerId) {        
         let color = getById(playerId, players).color;
         ctx.fillStyle = color;
-        ctx.fillRect(x * RenderConstants.CELL_WIDTH, y * RenderConstants.CELL_HEIGHT, RenderConstants.CELL_WIDTH, RenderConstants.CELL_HEIGHT);
+        
+        const neighbors = territoryNeighbors[y][x];
+        const nonNeighbors = flipNeighborList(neighbors);
+
+        const drawDirMap = {
+          "left": renderLeftSide,
+          "top": renderTopSide,
+          "right": renderRightSide,
+          "bottom": renderBottomSide,
+        };
+
+        const drawCornerDirMap = {
+          "left": renderLeftTopCorner,
+          "top": renderTopRightCorner,
+          "right": renderRightBottomCorner,
+          "bottom": renderBottomLeftCorner,
+        };
+
+        nonNeighbors.forEach(dir => {
+          drawDirMap[dir](x, y);
+        });
+
+        neighbors.forEach(dir => {
+          const nextDir = clockwiseDir(dir);
+          if (neighbors.includes(nextDir)) {
+            const firstStep = getTerritoryDirPositionFrom(territory, x, y, dir);
+            const diagonal = getTerritoryDirFrom(territory, firstStep.x, firstStep.y, nextDir);
+
+            if (diagonal !== playerId) {
+              drawCornerDirMap[dir](x, y);
+            }
+          }
+        });
+
       }
     });
   });
 
+  territory.forEach((row, y) => {
+    row.forEach((playerId, x) => {
+      if (playerId) {        
+        let color = getById(playerId, players).color;
+        ctx.fillStyle = color;
+
+        ctx.globalAlpha = 0.2;
+        ctx.fillRect(x * RenderConstants.CELL_WIDTH, y * RenderConstants.CELL_HEIGHT, RenderConstants.CELL_WIDTH, RenderConstants.CELL_HEIGHT);
+        ctx.globalAlpha = 1;
+      }
+    });
+  });
+  
 }
 
 function renderSelectStartingPosition() {
@@ -152,10 +303,16 @@ function renderLand() {
   renderingState.land.forEach((row, y) => {
     row.forEach((cell, x) => {
       if (cell == "water") {
-        ctx.fillStyle = "#0096FF";
+        ctx.fillStyle = "#4fb7ff";
+        if ((x + y) % 2 == 0) {
+          ctx.fillStyle = "#4fb7df";
+        }
       }
       else if (cell == "grass") {
         ctx.fillStyle = "#7EC850";
+        if ((x + y) % 2 == 0) {
+          ctx.fillStyle = "#8ECF50";
+        }
       }
 
       ctx.fillRect(x * RenderConstants.CELL_WIDTH, y * RenderConstants.CELL_HEIGHT, RenderConstants.CELL_WIDTH, RenderConstants.CELL_HEIGHT);
