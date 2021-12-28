@@ -3,6 +3,13 @@
 import { debounce } from 'throttle-debounce';
 import { getAsset } from './assets';
 import BetterCtx from './betterCtx';
+import { updateStageInfo } from './stageInfo';
+import { mouseDown, mouseClicked, tickEnd, tickStart } from './userInput';
+import { mouseInRect } from './utils';
+import { emit } from './networking';
+
+import Constants from '../shared/constants';
+import { getById, getMe } from './state';
 
 let renderingState;
 export const canvas = document.getElementById('canvas');
@@ -12,6 +19,12 @@ export const RenderConstants = Object.freeze({
   CELL_WIDTH: 100,
   CELL_HEIGHT: 100,
 });
+
+let clickHandler = null;
+
+function registerClick(handler) {
+  clickHandler = handler;
+}
 
 export function setRenderingState(newState) {
 
@@ -48,16 +61,107 @@ function callAnimationLoop(func) {
 }
 
 function render() {
-  ctx.fillStyle = "white";
+
+  clickHandler = null;
+  tickStart();
+
+  ctx.fillStyle = "#d4f1f9";
   ctx.abs.fillRect(0, 0, canvas.width, canvas.height);
 
   if (renderingState.screen !== 'game') {
     renderMainMenu();
-  } else {    
+
+  } else {      
+    renderLand();
+    
     renderGrid();
 
-    renderUnits();
+    renderTerritory();
+    
+    if (renderingState.stage === "pregame") {
+      renderSelectStartingPosition();
+      updateStageInfo();
+    }
+
+    if (renderingState.stage === "game") {
+      renderUnits();
+    }
+
   }
+
+  if (clickHandler) {
+    clickHandler();
+  }
+
+  tickEnd();
+
+}
+
+function renderTerritory() {
+
+  const { players, territory } = renderingState;
+
+  territory.forEach((row, y) => {
+    row.forEach((playerId, x) => {
+      if (playerId) {
+        let color = getById(playerId, players).color;
+        ctx.fillStyle = color;
+        ctx.fillRect(x * RenderConstants.CELL_WIDTH, y * RenderConstants.CELL_HEIGHT, RenderConstants.CELL_WIDTH, RenderConstants.CELL_HEIGHT);
+      }
+    });
+  });
+
+}
+
+function renderSelectStartingPosition() {
+  const { territory, gridDimensions } = renderingState;
+  const { width, height } = gridDimensions;
+
+  for (let x = 0; x < width; x++) {
+    for (let y = 0; y < height; y++) {
+      if (territory[y][x] === getMe().id) {
+        continue;
+      }
+
+      let rect = {
+        x: x * RenderConstants.CELL_WIDTH,
+        y: y * RenderConstants.CELL_HEIGHT,
+        width: RenderConstants.CELL_WIDTH,
+        height: RenderConstants.CELL_HEIGHT,
+      };
+
+      if (mouseInRect(rect)) {
+        ctx.globalAlpha = 0.4;
+        ctx.fillStyle = "black";
+        ctx.fillRect(rect);
+        ctx.globalAlpha = 1;
+
+        if (mouseClicked) {
+          registerClick(() => {
+            emit(Constants.messages.chooseStartingPosition, { x, y });
+          });
+        }
+      }
+    }
+  }
+
+}
+
+function renderLand() {
+
+  renderingState.land.forEach((row, y) => {
+    row.forEach((cell, x) => {
+      if (cell == "water") {
+        ctx.fillStyle = "#0096FF";
+      }
+      else if (cell == "grass") {
+        ctx.fillStyle = "#7EC850";
+      }
+
+      ctx.fillRect(x * RenderConstants.CELL_WIDTH, y * RenderConstants.CELL_HEIGHT, RenderConstants.CELL_WIDTH, RenderConstants.CELL_HEIGHT);
+    });
+  });
+
 }
 
 function renderMainMenu() {

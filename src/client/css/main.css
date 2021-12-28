@@ -5,6 +5,14 @@ html, body {
   overscroll-behavior: none;
   background-color: black;
   font-family: Verdana, Geneva, Tahoma, sans-serif;
+
+  /* disable text selection */
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
 }
 
 #canvas {
@@ -34,6 +42,8 @@ html, body {
   
   background-color: #eee;
   padding: 15px;
+
+  border: 5px solid black;
 
 }
 
@@ -70,5 +80,148 @@ html, body {
   border: 1px solid black;
   margin-top: 15px;
   cursor: pointer;
+
+}
+
+.errors {
+
+  position: fixed;
+  top: 0px;
+  right: 0px;
+  
+  display: flex;
+  flex-direction: column;
+
+  margin-right: 20px;
+  margin-top: 20px;
+
+  z-index: 10;
+
+}
+
+.error {
+  
+  margin-bottom: 5px;
+  font-size: 15px;
+  color: white;
+  background-color: #441100;
+  padding: 10px;
+  width: 300px;
+  max-height: 60px;
+  overflow-y: auto;
+
+  cursor: pointer;
+
+  transition: background-color 0.5s;
+
+}
+
+.error:hover {
+  background-color: #771100;
+}
+
+.actionBar {
+
+  position: fixed;
+  bottom: -100px;
+  left: 0px;
+  width: 100%;
+  height: 150px;
+  background-color: #eee;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9;
+
+  transition: bottom 0.5s;
+
+}
+
+.actionBar:hover {
+
+  bottom: 0px;
+
+}
+
+.actionBarContent {
+  
+  display: flex;
+
+}
+
+.actionBarTip {
+  
+  display: flex;
+  position: absolute;
+  top: 0px;
+  height: 50px;
+  align-items: center;
+  font-size: 12;
+  color: #888;
+
+  transition: height 0.5s, color 0.5s;
+
+}
+
+.actionBar:hover .actionBarTip {
+  
+  height: 20px;
+  color: #ccc;
+
+}
+
+.actionBar .arrowUp {
+  position: absolute;
+  left: 50%;
+  top: -8px;
+
+  border: solid #eee;
+  border-width: 0 10px 10px 0;
+  display: inline-block;
+  padding: 6px;
+  transform: rotate(-135deg) translate(6px, -6px);
+  -webkit-transform: rotate(-135deg) translate(6px, -6px);
+
+  transition: transform 0.5s;
+}
+
+.actionBar:hover .arrowUp {
+  transform: rotate(45deg) translate(30px, 1px);
+  -webkit-transform: rotate(45deg) translate(-25px, -15px);
+}
+
+.stageInfo {
+  
+  position: fixed;
+  top: 15px;
+  left: 15px;
+  width: 250px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9;
+
+  font-size: 13px;
+
+  color: white;
+
+  background-color: #005500;
+
+  border: 1px solid white;
+
+  padding-right: 20px;
+
+}
+
+.stageInfoText {
+  flex-grow: 1;
+}
+
+.stageInfo img {
+  
+  width: 50px;
+  height: 50px;
+  margin: 0px 10px;
 
 }

@@ -25,6 +25,16 @@ module.exports = {
         },
       },
       {
+        test: /\.jsx$/,
+        exclude: /node_modules/,
+        use: {
+          loader: "babel-loader",
+          options: {
+            presets: ['@babel/preset-react'],
+          }
+        }
+      },
+      {
         test: /\.css$/,
         use: [
           {
@@ -34,6 +44,9 @@ module.exports = {
         ],
       },
     ],
+  },
+  resolve: {
+    extensions: [".js", ".json", ".wasm", ".jsx"]
   },
   plugins: [
     new MiniCssExtractPlugin({

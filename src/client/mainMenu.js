@@ -69,6 +69,10 @@ export function addMainMenuHandlers() {
       emit(Constants.messages.joinLobby, {lobbyId: menuState.lobbyAvailable});
     }
   }
+
+  startLobby.onclick = () => {
+    emit(Constants.messages.startLobby, {});
+  }
   
 }
 

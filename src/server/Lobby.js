@@ -9,10 +9,21 @@ class Lobby {
 
     this.id = nanoid();
     this.sockets = [];
+    this.open = true;
+
+    this.config = {
+      gridDimensions: {
+        width: 15,
+        height: 15
+      }
+    };
 
   }
 
   addSocket(socket) {
+
+    socket.setState(state => ({ screen: "lobbyMenu", name: state.name, lobby: this.toClient() }));
+    socket.emitState();
     
     this.sockets.push(socket);
     
@@ -40,6 +51,18 @@ class Lobby {
     this.sockets = this.sockets.filter(s => s.id != socket.id);
     
     this.updateAllStates();
+
+  }
+
+  removeLobby() {
+
+    this.open = false;
+
+    // get index of lobby
+    const index = lobbies.indexOf(this);
+
+    // remove lobby
+    lobbies.splice(index, 1);
 
   }
 

@@ -17,10 +17,18 @@ class SocketWrapper {
 
   }
 
+  get id() {
+    return this.socket.id;
+  }
+
   onDisconnect(callback) {
 
     this.socket.on("disconnect", callback);
 
+  }
+
+  emitError(error) {
+    this.emit(Constants.messages.error, {error});
   }
 
   on({ message, state, input, respond }) {
@@ -28,7 +36,7 @@ class SocketWrapper {
 
       if (state) {
         if (!state(this.state)) {
-          console.log("Invalid state for message: " + message);
+          this.emitError("Invalid state for message: " + message);
           return;
         }
       }
@@ -37,7 +45,7 @@ class SocketWrapper {
         const { error, value } = input.validate(args);
 
         if (error) {
-          console.log(error.annotate());
+          this.emitError(error.details.map(d => d.message).join("\n"));
           return;
         }
       }

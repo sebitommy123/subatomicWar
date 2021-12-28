@@ -4,6 +4,9 @@ module.exports = Object.freeze({
     updateState: "updateState",
     chooseName: "chooseName",
     joinLobby: "joinLobby",
+    startLobby: "startLobby",
+    chooseStartingPosition: "chooseStartingPosition",
+    error: "errorMessage"
   },
   initialState: {
     screen: "connectingMenu",

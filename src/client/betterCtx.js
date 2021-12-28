@@ -9,6 +9,9 @@ export default class BetterCtx {
 
     this.xA = this.gameCoordsToCanvasX;
     this.yA = this.gameCoordsToCanvasY;
+
+    this.lastRect = null;
+    this.lastCircle = null;
   }
 
   get abs() {
@@ -36,7 +39,18 @@ export default class BetterCtx {
   }
 
   fillRect(x, y, width, height) {
+    if (typeof x == "object") {
+      y = x.y;
+      width = x.width;
+      height = x.height;
+      x = x.x;
+    }
+
     this.ctx.fillRect(this.xA(x), this.yA(y), width * this.zoom, height * this.zoom);
+
+    this.lastRect = {
+      x, y, width, height
+    };
   }
 
   createLinearGradient(x0, y0, x1, y1) {
@@ -119,6 +133,14 @@ export default class BetterCtx {
 
   set fontSize(fontSize) {
     this.ctx.font = Math.max(fontSize * this.zoom, 12) + "px Arial";
+  }
+
+  set globalAlpha(alpha) {
+    this.ctx.globalAlpha = alpha;
+  }
+
+  get globalAlpha() {
+    return this.ctx.globalAlpha;
   }
 
   get fillStyle() {
