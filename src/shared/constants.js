@@ -6,7 +6,9 @@ module.exports = Object.freeze({
     joinLobby: "joinLobby",
     startLobby: "startLobby",
     chooseStartingPosition: "chooseStartingPosition",
-    error: "errorMessage"
+    error: "errorMessage",
+    moveUnits: "moveUnits",
+    retreat: "retreat",
   },
   initialState: {
     screen: "connectingMenu",

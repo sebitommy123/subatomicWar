@@ -4,13 +4,16 @@ import { debounce } from 'throttle-debounce';
 import { getAsset } from './assets';
 import BetterCtx from './betterCtx';
 import { updateStageInfo } from './stageInfo';
-import { mouseDown, mouseClicked, tickEnd, tickStart } from './userInput';
-import { mouseInRect } from './utils';
+import { registerClick, mouseClicked, tickEnd, tickStart, registerDraggableSurface, mouseX, mouseY, registerNonDraggableSurface, registerScrollableSurface, registerNonScrollableSurface, registerNextMouseUpHandler, gameMouseY, gameMouseX, registerNextUnhandledClickHandler } from './userInput';
+import { getHoveringTileCoords, getQuantityBarAmount, mouseInRect, pointInRect, sinusoidalTimeValue } from './utils';
 import { emit } from './networking';
 
 import Constants from '../shared/constants';
-import { getById, getInternalState, getMe, mutateInternalState, flipNeighborList, clockwiseDir, getTerritoryDirFrom, getTerritoryDirPositionFrom } from './state';
+import { getById, getInternalState, getMe, mutateInternalState, flipNeighborList, clockwiseDir, getTerritoryDirFrom, getTerritoryDirPositionFrom, getDirectionFromPosToPos } from './state';
+import { getAdjescentPositions, isAdjescent } from '../shared/utils';
 
+let animationTickCounter = 0;
+let animationTick = 0;
 let renderingState;
 export const canvas = document.getElementById('canvas');
 export const ctx = new BetterCtx(canvas.getContext('2d'));
@@ -18,14 +21,9 @@ export const ctx = new BetterCtx(canvas.getContext('2d'));
 export const RenderConstants = Object.freeze({
   CELL_WIDTH: 100,
   CELL_HEIGHT: 100,
-  SIDE_SIZE: () => 7 / ctx.zoom
+  SIDE_SIZE: () => Math.min(7 / ctx.zoom, 8),
+  SOLDIER_PADDING: 10,
 });
-
-let clickHandler = null;
-
-function registerClick(handler) {
-  clickHandler = handler;
-}
 
 export function setRenderingState(newState) {
 
@@ -69,7 +67,6 @@ function callAnimationLoop(func) {
 
 function render() {
 
-  clickHandler = null;
   tickStart();
 
   ctx.fillStyle = "#d4f1f9";
@@ -78,12 +75,16 @@ function render() {
   if (renderingState.screen !== 'game') {
     renderMainMenu();
 
-  } else {      
+  } else {
+    registerMapSurface();
+
     renderLand();
     
     renderGrid();
 
     renderTerritory();
+
+    renderingHoveringTile();
     
     if (renderingState.stage === "pregame") {
       renderSelectStartingPosition();
@@ -92,20 +93,203 @@ function render() {
 
     if (renderingState.stage === "game") {
       renderUnits();
-      drawQuantityBar();
+      renderDraggingUnit();
+      renderVagrantUnits();
     }
 
-  }
-
-  if (clickHandler) {
-    clickHandler();
+    
+    computeQuantityBar();
+    drawQuantityBar();
   }
 
   tickEnd();
 
 }
 
+function renderVagrantUnits() {
+
+  const { vagrantUnits, territory, units } = renderingState;
+  const { selectedUnit, draggingUnit, quantityBar } = getInternalState();
+
+  vagrantUnits.forEach((vagrantUnit) => {
+
+    let { playerId, x, y, quantity, fighting, vagrant, vagrantData } = vagrantUnit;
+
+    let { toX, toY, start, end } = vagrantData;
+
+    let goingToFight = false;
+    let unitAtDestination = units.find(unit => unit.x === toX && unit.y === toY);
+    if (unitAtDestination != null && unitAtDestination.playerId != playerId) {
+      goingToFight = true;
+    }
+
+    let delta = Date.now() - start;
+    let totalDuration = end - start;
+
+    let progress = delta / totalDuration;
+
+    if (progress > 1) progress = 1;
+
+    let targetProgress = 1;
+    if (fighting || goingToFight) {
+      targetProgress = 0.6;
+    }
+    
+    let showX = x + (toX - x) * progress * targetProgress;
+    let showY = y + (toY - y) * progress * targetProgress;
+
+    let compact = false;
+    if (fighting) {
+      compact = true;
+    } else if (goingToFight) {
+      compact = progress;
+    }
+
+    let quantityToDisplay = quantity;
+
+    if (selectedUnit && selectedUnit == vagrantUnit.id && draggingUnit && quantityBar) {
+      quantityToDisplay = quantityBar.max - getQuantityBarAmount();
+    }
+
+    let rect = renderSoldier(showX, showY, quantityToDisplay, false, compact, getDirectionFromPosToPos(x, y, toX, toY));
+
+    if (fighting && mouseInRect(rect)) {
+
+      handleMouseOverUnit(vagrantUnit, rect);
+  
+    }
+
+  });
+
+}
+
+function renderingHoveringTile() {
+
+  const { units } = renderingState;
+  const { draggingUnit, selectedUnit } = getInternalState();
+
+  if (draggingUnit && selectedUnit) {
+
+    const { x: fromX, y: fromY } = getUnitById(selectedUnit);
+
+    const possibleTiles = getAdjescentPositions({ x: fromX, y: fromY });
+
+    possibleTiles.push({ x: fromX, y: fromY });
+
+    possibleTiles.forEach(({ x: posX, y: posY }) => {
+      ctx.fillStyle = "#00ff00";
+      ctx.globalAlpha = 0.3;
+
+      if (!canUnitMoveTo(getUnitById(selectedUnit), posX, posY)) return;
+
+      ctx.fillRect(posX * RenderConstants.CELL_WIDTH, posY * RenderConstants.CELL_HEIGHT, RenderConstants.CELL_WIDTH, RenderConstants.CELL_HEIGHT);
+    });
+
+    const { x: toX, y: toY } = getHoveringTileCoords();
+
+    ctx.fillStyle = "#00ff00";
+    if (!canUnitMoveTo(getUnitById(selectedUnit), toX, toY)) {
+      ctx.fillStyle = "#ff0000";
+    }
+    ctx.globalAlpha = 0.5;
+
+    ctx.fillRect(toX * RenderConstants.CELL_WIDTH, toY * RenderConstants.CELL_HEIGHT, RenderConstants.CELL_WIDTH, RenderConstants.CELL_HEIGHT);
+
+    ctx.globalAlpha = 1;
+
+  }
+
+}
+
+function canUnitMoveTo(unit, x, y) {
+
+  const { x: fromX, y: fromY } = unit;
+
+  if (unit.vagrant) {
+    return x == fromX && y == fromY;
+  }
+
+  if(!isAdjescent({ x: fromX, y: fromY }, { x, y })) return false;
+
+  if (unit.engagedUnits.map(engagedUnitId => getUnitById(engagedUnitId)).some(engagedUnit => engagedUnit.x === x && engagedUnit.y === y)) {
+    return false;
+  }
+
+  return true;
+
+}
+
+function registerMapSurface() {
+  registerDraggableSurface((dx, dy) => {
+
+    ctx.offsetX += dx;
+    ctx.offsetY += dy;
+
+  });
+
+  registerScrollableSurface((dy) => {
+    let scale = dy * -0.003;
+
+    let previousZoom = ctx.zoom;
+    let nextZoom = previousZoom + scale;
+
+    nextZoom = Math.max(0.4, nextZoom);
+    nextZoom = Math.min(4, nextZoom);
+
+    ctx.zoom = nextZoom;
+
+    ctx.offsetX = mouseX - (mouseX - ctx.offsetX) * nextZoom / previousZoom;
+    ctx.offsetY = mouseY - (mouseY - ctx.offsetY) * nextZoom / previousZoom;
+  });
+}
+
+function computeQuantityBar() {
+
+  mutateInternalState(internalState => {
+
+    let previousConfig = internalState.quantityBar;
+    let previousPercentage = previousConfig ? previousConfig.percentage : null;
+
+    internalState.quantityBar = null;
+
+    if (internalState.selectedUnit || internalState.draggingUnit) {
+
+      const unit = getUnitById(internalState.selectedUnit);
+
+      let percentage = previousPercentage;
+      if (!percentage) {
+        percentage = internalState.savedQuantityPercentages.unit;
+      }
+      internalState.savedQuantityPercentages.unit = percentage;
+
+      internalState.quantityBar = {
+        percentage: percentage,
+        max: unit.quantity,
+        units: "units",
+        tip: () => {
+          let quantity = getQuantityBarAmount();
+          return [
+            `MOVING UNITS`,
+            `Units to move: ${quantity}`,
+            `Units left over: ${unit.quantity - quantity}`,
+            `Drag unit to tile`
+          ]
+        }
+      };
+
+    }
+
+  });
+
+}
+
 function drawQuantityBar() {
+
+  if (!getInternalState().quantityBar) return;
+
+  const { quantityBar } = getInternalState();
+  const { percentage, max } = quantityBar;
+  const tip = quantityBar.tip();
 
   const marginRight = 75;
   const barWidth = 50;
@@ -115,25 +299,133 @@ function drawQuantityBar() {
 
   const barHeight = canvas.height - marginBottom - marginTop;
 
+  // light blue background
   const backgroundPadding = 3;
   ctx.fillStyle = "#d4f1f9";
   ctx.abs.fillRect(canvas.width - marginRight - barWidth - backgroundPadding, marginTop - backgroundPadding, barWidth + backgroundPadding*2, barHeight + backgroundPadding*2)
   
+  // dark gray bar
   ctx.fillStyle = "#404040";
   ctx.abs.fillRect(canvas.width - marginRight - barWidth, marginTop, barWidth, barHeight);
 
-  const filledPercentage = 0.6;
-  const filledHeight = barHeight * filledPercentage;
+  if (pointInRect({ x: mouseX, y: mouseY }, {
+    x: canvas.width - marginRight - barWidth, 
+    y: marginTop, 
+    width: barWidth, 
+    height: barHeight
+  })) {
+    function update() {
+      const newFillAbs = barHeight - (mouseY - marginTop);
+      let newFillPercent = newFillAbs / barHeight;
 
+      newFillPercent = Math.floor(newFillPercent * 100) / 100;
+
+      if (newFillPercent > 1) newFillPercent = 1;
+      if (newFillPercent < 0) newFillPercent = 0;
+
+      mutateInternalState(state => {
+        state.quantityBar.percentage = newFillPercent;
+      });
+    }
+
+    registerDraggableSurface(update);
+    if (mouseClicked) registerClick(update);
+
+    registerScrollableSurface(dy => {
+
+      mutateInternalState(state => {
+        let newVal = state.quantityBar.percentage + dy * 0.003;
+
+        if (newVal > 1) newVal = 1;
+        if (newVal < 0) newVal = 0;
+
+        state.quantityBar.percentage = newVal;
+      });
+      
+    });
+  }
+
+  const filledHeight = barHeight * percentage;
+
+  // green bar
   ctx.fillStyle = "#70AD47";
   ctx.abs.fillRect(canvas.width - marginRight - barWidth, marginTop + (barHeight - filledHeight), barWidth, filledHeight)
 
+  // separating line
   ctx.strokeStyle = "#d4f1f9";
   ctx.abs.beginPath();
   ctx.abs.lineWidth = 3;
   ctx.abs.moveTo(canvas.width - marginRight - barWidth, marginTop + (barHeight - filledHeight));
   ctx.abs.lineTo(canvas.width - marginRight, marginTop + (barHeight - filledHeight));
   ctx.abs.stroke();
+
+  // text
+  const value = getQuantityBarAmount();
+  const percentText = Math.floor(percentage * 100) + "%";
+
+  if (filledHeight < barHeight - 40) {
+
+    ctx.fillStyle = "#dddddd";
+    ctx.abs.font = "9px Arial";
+    ctx.abs.textAlign = "center";
+    ctx.abs.textBaseline = "bottom";
+    ctx.abs.fillText(percentText, canvas.width - marginRight - barWidth/2 + 1, marginTop + (barHeight - filledHeight) - 18);
+    ctx.fillStyle = "#ffffff";
+    ctx.abs.font = "13px Arial";
+    ctx.abs.fillText(value, canvas.width - marginRight - barWidth/2, marginTop + (barHeight - filledHeight) - 4);
+ 
+  } else {
+
+    ctx.fillStyle = "#dddddd";
+    ctx.abs.font = "9px Arial";
+    ctx.abs.textAlign = "center";
+    ctx.abs.textBaseline = "top";
+    ctx.abs.fillText(percentText, canvas.width - marginRight - barWidth/2 + 1, marginTop + (barHeight - filledHeight) + 20);
+    ctx.fillStyle = "#ffffff";
+    ctx.abs.font = "13px Arial";
+    ctx.abs.fillText(value, canvas.width - marginRight - barWidth/2, marginTop + (barHeight - filledHeight) + 6);
+
+  }
+
+  ctx.fillStyle = "#000000";
+  ctx.abs.font = "bold 9px Arial";
+  ctx.abs.textBaseline = "bottom";
+  ctx.abs.fillText(max + " units", canvas.width - marginRight - barWidth/2, marginTop - backgroundPadding - 2);
+  
+  ctx.abs.font = "bold 14px Arial";
+  ctx.abs.fillText("100%", canvas.width - marginRight - barWidth/2, marginTop - backgroundPadding - 13);
+
+  ctx.fillStyle = "#000000";
+  ctx.abs.font = "bold 14px Arial";
+  ctx.abs.textBaseline = "top";
+  ctx.abs.fillText("0%", canvas.width - marginRight - barWidth/2 + 2, marginTop + barHeight + backgroundPadding + 4);
+
+  const separation = 40;
+  const lines = tip.length;
+  const lineHeight = 20;
+  const tipPadding = 10;
+  const tipHeight = lines * lineHeight + tipPadding*2;
+  const tipWidth = 140;
+  
+  ctx.fillStyle = "#404040";
+  ctx.abs.fillRect(canvas.width - marginRight - barWidth/2 - tipWidth/2, marginTop - separation - tipHeight, tipWidth, tipHeight);
+  if (pointInRect({x: mouseX, y: mouseY}, {
+    x: canvas.width - marginRight - barWidth/2 - tipWidth/2, 
+    y: marginTop - separation - tipHeight, 
+    width: tipWidth, 
+    height: tipHeight
+  })) {
+    registerNonDraggableSurface();
+    registerNonScrollableSurface();
+  }
+
+  tip.forEach((tip, i) =>  {
+    ctx.fillStyle = "white";
+    ctx.abs.font = "13px Arial";
+    ctx.abs.textAlign = "center";
+    ctx.abs.textBaseline = "middle";
+    ctx.abs.fillText(tip, canvas.width - marginRight - barWidth/2, marginTop - separation - tipHeight + i * lineHeight + lineHeight/2 + tipPadding);
+  });
 
 }
 
@@ -351,32 +643,300 @@ function renderGrid() {
   }
 }
 
+function renderDraggingUnit() {
+
+  const { selectedUnit, draggingUnit, quantityBar } = getInternalState();
+  
+  if (!selectedUnit || !draggingUnit) return;
+  
+  if (quantityBar) {
+    let quantityToMove = getQuantityBarAmount();
+    renderSoldier((gameMouseX + draggingUnit.offsetX) / RenderConstants.CELL_WIDTH, (gameMouseY + draggingUnit.offsetY) / RenderConstants.CELL_HEIGHT, quantityToMove, true, getUnitById(selectedUnit).vagrant);
+  }
+
+}
+
+function getSoldierDimensions(padding=RenderConstants.SOLDIER_PADDING) {
+
+  let imgHeight = RenderConstants.CELL_HEIGHT - padding*2;
+  let imgWidth = imgHeight * 430 / getAsset("soldier").height;
+  
+  return { imgHeight, imgWidth };
+}
+
 function renderUnits() {
 
+  const { selectedUnit, draggingUnit, quantityBar } = getInternalState();
+
   renderingState.units.forEach(unit => {
-    let { id, x, y, quantity } = unit;
+    let { id, x, y, quantity, fighting } = unit;
 
-    ctx.fillStyle = "red";
-    let img = getAsset("soldier");
+    let quantityToDisplay = quantity;
 
-    let padding = 10;
-
-    let renderWidth = (RenderConstants.CELL_HEIGHT - padding*2) * img.width / img.height;
-    ctx.drawImage(img, x * RenderConstants.CELL_WIDTH + (RenderConstants.CELL_WIDTH - renderWidth) / 2, y * RenderConstants.CELL_HEIGHT + padding, renderWidth, RenderConstants.CELL_HEIGHT - padding*2);
-  
-    ctx.fontSize = 20;
-    ctx.textAlign = "right";
-    ctx.textBaseline = "top";
-
-    if (ctx.zoom < 0.5) {
-      ctx.fillStyle = "white";
-      let textWidth = ctx.abs.measureText(quantity).width / ctx.zoom;
-      ctx.fillRect(x * RenderConstants.CELL_WIDTH + RenderConstants.CELL_WIDTH - 10 - textWidth, y * RenderConstants.CELL_HEIGHT + 3, textWidth, 15 / ctx.zoom);
+    if (selectedUnit && selectedUnit == id && draggingUnit && quantityBar) {
+      quantityToDisplay = quantityBar.max - getQuantityBarAmount();
     }
 
-    ctx.fillStyle = "black";
-    ctx.fillText(quantity, x * RenderConstants.CELL_WIDTH + RenderConstants.CELL_WIDTH - 10, y * RenderConstants.CELL_HEIGHT + 5);
+    const rect = renderSoldier(x, y, quantityToDisplay, selectedUnit == id, fighting);
+
+    if (mouseInRect(rect)) {
+
+      handleMouseOverUnit(unit, rect)
+  
+    }
   
   });
 
+}
+
+function renderSoldier(x, y, quantity, occilate, compact=false, arrowLabel=null) {
+  let img = getAsset("soldier");
+
+  
+  let imgX;
+  let imgY;
+  let imgWidth;
+  let imgHeight;
+
+  let padding = RenderConstants.SOLDIER_PADDING + RenderConstants.SOLDIER_PADDING * 3 * compact;
+
+  if (ctx.zoom > 0.7 || compact) { 
+    
+    const { imgWidth: renderWidth, imgHeight: renderHeight } = getSoldierDimensions(padding);
+    imgX = x * RenderConstants.CELL_WIDTH + (RenderConstants.CELL_WIDTH - renderWidth) / 2;
+    imgY = y * RenderConstants.CELL_HEIGHT + padding;
+    imgWidth = renderWidth;
+    imgHeight = renderHeight;
+
+    if(occilate) ctx.globalAlpha = sinusoidalTimeValue(0.5, 1, 100);
+    ctx.drawImage(img, 0, 0, 430, 630, imgX, imgY, renderWidth, renderHeight);
+    ctx.globalAlpha = 1;
+
+  } else {
+    let renderHeight = 30;
+    let renderWidth = renderHeight * 430 / img.height;
+    imgX = x * RenderConstants.CELL_WIDTH + (RenderConstants.CELL_WIDTH - renderWidth) / 2;
+    imgY = y * RenderConstants.CELL_HEIGHT + RenderConstants.CELL_HEIGHT - padding - renderHeight;
+    ctx.drawImage(img, 0, 0, 430, 630, imgX, 2 + imgY, renderWidth, renderHeight);
+    ctx.drawImage(img, 0, 0, 430, 630, 15 + imgX, -2 + imgY, renderWidth, renderHeight);
+    ctx.drawImage(img, 0, 0, 430, 630, -10 + imgX, -4 + imgY, renderWidth, renderHeight);
+  }
+
+  
+  let quantitySize = 13 * ctx.zoom;
+
+  if (quantitySize < 16) {
+
+    let quantityX = x * RenderConstants.CELL_WIDTH + RenderConstants.CELL_WIDTH - 20;
+    let quantityY = y * RenderConstants.CELL_HEIGHT + 20;
+
+    if (compact) {
+      quantityX = imgX + imgWidth / 2;
+      quantityY = imgY + imgHeight / 2;
+    }
+
+    let realSize = quantitySize / ctx.zoom + 6;
+
+    if (arrowLabel) {
+      
+      let arrowToX = quantityX;
+      let arrowToY = quantityY;
+
+      if (arrowLabel == "right") {
+        arrowToX += realSize * 0.05;
+        quantityX -= realSize * 0.5;
+      } else if (arrowLabel == "left") {
+        arrowToX -= realSize * 0.05;
+        quantityX += realSize * 0.5;
+      } else if (arrowLabel == "top") {
+        arrowToY -= realSize * 0.05;
+        quantityY += realSize * 0.5;
+      } else if (arrowLabel == "bottom") {
+        arrowToY += realSize * 0.05;
+        quantityY -= realSize * 0.5;
+      }
+
+      drawArrow(quantityX, quantityY, arrowToX, arrowToY, 20, "#404040");
+    } else {
+      ctx.fillStyle = "#404040";
+      ctx.fillCircle(quantityX, quantityY, (quantitySize) / ctx.zoom + 6)
+    }
+
+    ctx.font = Math.floor(quantitySize*1.8) + "px Arial";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+
+    
+    ctx.fillStyle = "white";
+    ctx.fillText(quantity, quantityX, quantityY);
+    
+  } else {
+
+    renderLabel(quantity + " units", imgX + imgWidth/2, y * RenderConstants.CELL_HEIGHT + padding)
+
+  }
+
+  return { x: imgX, y: imgY, width: imgWidth, height: imgHeight };
+}
+
+function drawArrow(fromx, fromy, tox, toy, arrowWidth, color){
+  //variables to be used when creating the arrow
+  var headlen = 10;
+  var angle = Math.atan2(toy-fromy,tox-fromx);
+
+  ctx.abs.save();
+  ctx.strokeStyle = color;
+
+  //starting path of the arrow from the start square to the end square
+  //and drawing the stroke
+  ctx.beginPath();
+  ctx.moveTo(fromx, fromy);
+  ctx.lineTo(tox, toy);
+  ctx.lineWidth = arrowWidth * ctx.zoom;
+  ctx.stroke();
+
+  //starting a new path from the head of the arrow to one of the sides of
+  //the point
+  ctx.beginPath();
+  ctx.moveTo(tox, toy);
+  ctx.lineTo(tox-headlen*Math.cos(angle-Math.PI/7),
+             toy-headlen*Math.sin(angle-Math.PI/7));
+
+  //path from the side point of the arrow, to the other side point
+  ctx.lineTo(tox-headlen*Math.cos(angle+Math.PI/7),
+             toy-headlen*Math.sin(angle+Math.PI/7));
+
+  //path from the side point back to the tip of the arrow, and then
+  //again to the opposite side point
+  ctx.lineTo(tox, toy);
+  ctx.lineTo(tox-headlen*Math.cos(angle-Math.PI/7),
+             toy-headlen*Math.sin(angle-Math.PI/7));
+
+  //draws the paths created above
+  ctx.stroke();
+  ctx.abs.restore();
+}
+
+function handleMouseOverUnit(unit, rect) {
+
+  if (unit.playerId != getMe().id) return;
+
+  const { id } = unit;
+
+  if (mouseClicked) {
+    registerClick(() => {
+      mutateInternalState(state => {
+        state.selectedUnit = id;
+      });
+
+      registerNextUnhandledClickHandler(() => {
+        if (!mouseInRect(rect)) {
+          mutateInternalState(state => {
+            state.selectedUnit = null;
+          });
+        }
+      });
+    });
+  }
+
+  registerDraggableSurface((dx, dy, first) => {
+    mutateInternalState(state => {
+      state.selectedUnit = id;
+
+      if (!state.draggingUnit) {
+        if (!unit.vagrant) {
+          state.draggingUnit = {
+            offsetX: unit.x * RenderConstants.CELL_WIDTH - gameMouseX,
+            offsetY: unit.y * RenderConstants.CELL_HEIGHT - gameMouseY,
+          }
+        } else {
+          state.draggingUnit = {
+            offsetX: -RenderConstants.CELL_WIDTH/2,
+            offsetY: -RenderConstants.CELL_HEIGHT/2,
+          }
+        }
+      }
+    });
+
+    if (first) {
+      registerNextMouseUpHandler(() => {
+        mutateInternalState(state => {
+          const { x: toX, y: toY } = getHoveringTileCoords();
+
+          if (canUnitMoveTo(unit, toX, toY)) {
+
+            let moveAmount = getQuantityBarAmount();
+            
+            if (unit.vagrant) {
+
+              emit(Constants.messages.retreat, {
+                unitId: id,
+                quantity: moveAmount
+              });
+
+            } else {
+              
+              emit(Constants.messages.moveUnits, {
+                from: { x: unit.x, y: unit.y },
+                to: { x: toX, y: toY },
+                quantity: moveAmount
+              });
+
+            }
+
+            if (moveAmount == unit.quantity) state.selectedUnit = null;
+
+          }
+
+          state.draggingUnit = null;
+        });
+      });
+
+      registerNextUnhandledClickHandler(() => {
+        if (!mouseInRect(rect)) {
+          mutateInternalState(state => {
+            state.selectedUnit = null;
+          });
+        }
+      });
+    }
+  });
+
+  const { selectedUnit } = getInternalState();
+
+  if (selectedUnit) {
+    registerScrollableSurface((dy) => {
+      mutateInternalState(state => {
+        let newVal = state.quantityBar.percentage + dy * 0.003;
+
+        if (newVal > 1) newVal = 1;
+        if (newVal < 0) newVal = 0;
+
+        state.quantityBar.percentage = newVal;
+      });
+    });
+  }
+
+}
+
+function renderLabel(text, labelX, labelY) {
+  let fontSize = 8;
+  ctx.fontSize = fontSize;
+  let textWidth = ctx.abs.measureText(text).width / ctx.zoom;
+  let labelPadding = 3;
+  let marginBottom = 0;
+
+  ctx.fillStyle = "#404040";
+  ctx.fillRect(labelX - textWidth/2 - labelPadding, labelY - fontSize - labelPadding - marginBottom, textWidth + labelPadding*2, fontSize + labelPadding*2)
+
+  ctx.textBaseline = "middle";
+  ctx.textAlign = "center";
+  ctx.fillStyle = "white";
+  ctx.fillText(text, labelX, labelY - fontSize/2 - marginBottom);
+}
+
+function getUnitById(unitId) {
+  const { units, vagrantUnits } = renderingState;
+
+  return getById(unitId, units) || getById(unitId, vagrantUnits);
 }

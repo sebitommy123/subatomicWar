@@ -1,4 +1,5 @@
-import { ctx } from "./render";
+import { ctx, RenderConstants } from "./render";
+import { getInternalState } from "./state";
 import { gameMouseX, gameMouseY } from "./userInput";
 
 const errors = document.getElementById('errors');
@@ -62,4 +63,21 @@ export function mouseInLastCircle() {
   if (!ctx.lastCircle) return false;
 
   return mouseInCircle(ctx.lastCircle);
+}
+
+export function sinusoidalTimeValue(min, max, period) {
+  return (Math.sin(Date.now() / period) + 1) / 2 * (max - min) + min;
+}
+
+export function getHoveringTileCoords() {
+  return {
+    x: Math.floor(gameMouseX / RenderConstants.CELL_WIDTH),
+    y: Math.floor(gameMouseY / RenderConstants.CELL_HEIGHT)
+  };
+}
+
+export function getQuantityBarAmount() {
+  const { quantityBar } = getInternalState();
+
+  return Math.max(1, Math.floor(quantityBar.percentage * quantityBar.max));
 }

@@ -5,7 +5,14 @@ import { setRenderingState } from "./render";
 import { setStageInfoState } from "./stageInfo";
 
 let state = null;
-let internalState = {};
+let internalState = {
+  quantityBar: null,
+  savedQuantityPercentages: {
+    unit: 0.5,
+  },
+  selectedUnit: null,
+  draggingUnit: null
+};
 let me;
 
 export function mutateInternalState(mutFunc) {
@@ -82,6 +89,20 @@ export function getTerritoryDirFrom(territory, x, y, dir) {
   }
 
   return getTerritoryAt(territory, x, y);
+}
+
+export function getDirectionFromPosToPos(x1, y1, x2, y2) {
+  if (x1 < x2) {
+    return "right";
+  } else if (x1 > x2) {
+    return "left";
+  } else if (y1 < y2) {
+    return "bottom";
+  } else if (y1 > y2) {
+    return "top";
+  } else {
+    return null;
+  }
 }
 
 export function flipNeighborList(neighbors) {

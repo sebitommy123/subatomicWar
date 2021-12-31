@@ -4,6 +4,9 @@ export let dragging = false;
 let dragLastPosition = null;
 let dragStart = null;
 let realDrag = false;
+let currentDragHandler = null;
+let nextMouseUp = [];
+let nextUnhandledClick = [];
 
 export let mouseX = 0;
 export let mouseY = 0;
@@ -29,6 +32,7 @@ function handleMouseDown(evt) {
   realDrag = false;
   dragLastPosition = { x: evt.offsetX, y: evt.offsetY };
   dragStart = { x: evt.offsetX, y: evt.offsetY };
+  currentDragHandler = dragHandler || (() => {});
 
   mouseDown = true;
 }
@@ -38,15 +42,16 @@ function handleMouseMove(evt) {
     let deltaX = evt.offsetX - dragLastPosition.x;
     let deltaY = evt.offsetY - dragLastPosition.y;
 
+    let lastRealDrag = realDrag;
+
     if (!realDrag) {
       let distanceFromStart = Math.sqrt(Math.pow(dragStart.x - evt.offsetX, 2) + Math.pow(dragStart.y - evt.offsetY, 2));
       if (distanceFromStart > 5) {
         realDrag = true;
       }
     }
-
-    ctx.offsetX += deltaX;
-    ctx.offsetY += deltaY;
+    
+    if (realDrag) currentDragHandler(deltaX, deltaY, lastRealDrag!=realDrag);
 
     dragLastPosition = { x: evt.offsetX, y: evt.offsetY };
   }
@@ -66,30 +71,66 @@ function handleMouseUp(evt) {
   realDrag = false;
 
   mouseDown = false;
+
+  nextMouseUp.forEach(handler => handler());
+  nextMouseUp = [];
 }
 
 function handleWheel(evt) {
-  let scale = evt.deltaY * -0.003;
 
-  console.log(scale);
+  scrollHandler(evt.deltaY);
 
-  let previousZoom = ctx.zoom;
-  let nextZoom = previousZoom + scale;
+}
 
-  nextZoom = Math.max(0.4, nextZoom);
-  nextZoom = Math.min(4, nextZoom);
+let clickHandler = null;
+let dragHandler = null;
+let scrollHandler = null;
 
-  ctx.zoom = nextZoom;
+export function registerNextMouseUpHandler(handler) {
+  nextMouseUp.push(handler);
+}
 
-  ctx.offsetX = mouseX - (mouseX - ctx.offsetX) * nextZoom / previousZoom;
-  ctx.offsetY = mouseY - (mouseY - ctx.offsetY) * nextZoom / previousZoom;
+export function registerNextUnhandledClickHandler(handler) {
+  nextUnhandledClick.push(handler);
+}
 
+export function registerDraggableSurface(handler) {
+  dragHandler = handler;
+}
+
+export function registerScrollableSurface(handler) {
+  scrollHandler = handler;
+}
+
+export function registerNonDraggableSurface() {
+  dragHandler = (dx, dy) => { };
+}
+
+export function registerNonScrollableSurface() {
+  scrollHandler = (dx, dy) => { };
+}
+
+export function registerClick(handler) {
+  clickHandler = handler;
 }
 
 export function tickStart() {
-  
+  clickHandler = null;
+  dragHandler = null;
+  scrollHandler = null;
+
+  if (mouseClicked) {
+    registerClick(() => {
+      nextUnhandledClick.forEach(handler => handler());
+      nextUnhandledClick = [];
+    });
+  }
 }
 
 export function tickEnd() {
+  if (clickHandler) {
+    clickHandler();
+  }
+  
   mouseClicked = false;
 }
