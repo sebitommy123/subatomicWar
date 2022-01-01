@@ -16,11 +16,14 @@ class Lobby {
         width: 15,
         height: 15
       },
-      waitTime: 3,
+      waitTime: 15,
+      dayLength: 10 * 1000,
       startingGold: 0,
       goldPerDay: 5,
       vagrantMoveTime: 3000,
       fightTime: 1000,
+      fightSpeed: 2000,
+      fightInitialDelay: 1000,
     };
 
   }

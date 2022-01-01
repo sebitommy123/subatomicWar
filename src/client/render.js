@@ -10,7 +10,7 @@ import { emit } from './networking';
 
 import Constants from '../shared/constants';
 import { getById, getInternalState, getMe, mutateInternalState, flipNeighborList, clockwiseDir, getTerritoryDirFrom, getTerritoryDirPositionFrom, getDirectionFromPosToPos } from './state';
-import { getAdjescentPositions, isAdjescent } from '../shared/utils';
+import { getAdjescentPositions, isAdjescent, isIsolatedPosition } from '../shared/utils';
 
 let animationTickCounter = 0;
 let animationTick = 0;
@@ -23,6 +23,8 @@ export const RenderConstants = Object.freeze({
   CELL_HEIGHT: 100,
   SIDE_SIZE: () => Math.min(7 / ctx.zoom, 8),
   SOLDIER_PADDING: 10,
+  VAGRANT_FIGHTING_INSET: 0.7,
+  BUILDING_PADDING: 10,
 });
 
 export function setRenderingState(newState) {
@@ -33,6 +35,18 @@ export function setRenderingState(newState) {
 
   if (newState.territory && lastState.territory != newState.territory) {
     recomputeTerritoryNeighbors();
+  }
+
+  if (newState.screen === "game" && newState.stage === "game") {
+
+    const { selectedUnit } = getInternalState();
+    if (!getUnitById(selectedUnit)) {
+      mutateInternalState(state => {
+        state.selectedUnit = null;
+        state.draggingUnit = null;
+      });
+    }
+
   }
 
 }
@@ -83,8 +97,6 @@ function render() {
     renderGrid();
 
     renderTerritory();
-
-    renderingHoveringTile();
     
     if (renderingState.stage === "pregame") {
       renderSelectStartingPosition();
@@ -92,6 +104,10 @@ function render() {
     }
 
     if (renderingState.stage === "game") {
+      renderCities();
+
+      renderingHoveringTile();
+
       renderUnits();
       renderDraggingUnit();
       renderVagrantUnits();
@@ -106,6 +122,19 @@ function render() {
 
 }
 
+function renderCities() {
+
+  renderingState.cities.forEach(city => {
+
+    let { x, y, population, id } = city;
+
+    ctx.fillStyle = "#888888";
+    ctx.fillRect(x * RenderConstants.CELL_WIDTH + RenderConstants.BUILDING_PADDING, y * RenderConstants.CELL_HEIGHT + RenderConstants.BUILDING_PADDING, RenderConstants.CELL_WIDTH - RenderConstants.BUILDING_PADDING*2, RenderConstants.CELL_HEIGHT - RenderConstants.BUILDING_PADDING*2);
+
+  });
+
+}
+
 function renderVagrantUnits() {
 
   const { vagrantUnits, territory, units } = renderingState;
@@ -113,15 +142,9 @@ function renderVagrantUnits() {
 
   vagrantUnits.forEach((vagrantUnit) => {
 
-    let { playerId, x, y, quantity, fighting, vagrant, vagrantData } = vagrantUnit;
+    let { x, y, quantity, fighting, vagrantData } = vagrantUnit;
 
     let { toX, toY, start, end } = vagrantData;
-
-    let goingToFight = false;
-    let unitAtDestination = units.find(unit => unit.x === toX && unit.y === toY);
-    if (unitAtDestination != null && unitAtDestination.playerId != playerId) {
-      goingToFight = true;
-    }
 
     let delta = Date.now() - start;
     let totalDuration = end - start;
@@ -130,28 +153,22 @@ function renderVagrantUnits() {
 
     if (progress > 1) progress = 1;
 
-    let targetProgress = 1;
-    if (fighting || goingToFight) {
-      targetProgress = 0.6;
-    }
-    
-    let showX = x + (toX - x) * progress * targetProgress;
-    let showY = y + (toY - y) * progress * targetProgress;
+    let current = getVagrantXYCStart(vagrantUnit);
+    let goal = getVagrantXYCGoal(vagrantUnit);
 
-    let compact = false;
-    if (fighting) {
-      compact = true;
-    } else if (goingToFight) {
-      compact = progress;
-    }
+    let interpolated = interpolateXYC(current, goal, progress);
+
+    let { x: xPos, y: yPos, c: cPos } = fighting ? goal : interpolated;
 
     let quantityToDisplay = quantity;
+    let occilate = false;
 
-    if (selectedUnit && selectedUnit == vagrantUnit.id && draggingUnit && quantityBar) {
-      quantityToDisplay = quantityBar.max - getQuantityBarAmount();
+    if (selectedUnit && selectedUnit == vagrantUnit.id) {
+      if (draggingUnit && quantityBar) quantityToDisplay = quantityBar.max - getQuantityBarAmount();
+      occilate = true;
     }
 
-    let rect = renderSoldier(showX, showY, quantityToDisplay, false, compact, getDirectionFromPosToPos(x, y, toX, toY));
+    let rect = renderSoldier(xPos, yPos, quantityToDisplay, occilate, cPos, getDirectionFromPosToPos(x, y, toX, toY));
 
     if (fighting && mouseInRect(rect)) {
 
@@ -161,6 +178,81 @@ function renderVagrantUnits() {
 
   });
 
+}
+
+function interpolateXYC(start, end, progress) {
+
+  let x = start.x + (end.x - start.x) * progress;
+  let y = start.y + (end.y - start.y) * progress;
+  let c = start.c + (end.c - start.c) * progress;
+
+  return {x, y, c};
+
+}
+
+function getVagrantXYCStart(vagrantUnit) {
+
+  const { vagrantUnits, territory, units } = renderingState;
+  const { selectedUnit, draggingUnit, quantityBar } = getInternalState();
+
+  let { playerId, x, y, quantity, fighting, retreating, vagrant, vagrantData } = vagrantUnit;
+
+  let { toX, toY, start, end } = vagrantData;
+
+  let direction = getDirectionFromPosToPos(x, y, toX, toY);
+
+  let unitAtStart = units.find(unit => unit.x === x && unit.y === y);
+
+  if (retreating) {
+
+    if (direction == "right") return { x: toX - RenderConstants.VAGRANT_FIGHTING_INSET, y: toY, c: 1 };
+    if (direction == "left") return { x: toX + RenderConstants.VAGRANT_FIGHTING_INSET, y: toY, c: 1 };
+    if (direction == "top") return { x: toX, y: toY + RenderConstants.VAGRANT_FIGHTING_INSET, c: 1 };
+    if (direction == "bottom") return { x: toX, y: toY - RenderConstants.VAGRANT_FIGHTING_INSET, c: 1 };
+
+  } else {
+
+    if (unitAtStart && unitAtStart.playerId == playerId && unitAtStart.fighting) {
+      return {x: x, y: y, c: 1};
+    }
+
+    return {x: x, y: y, c: 0};
+
+  }
+
+}
+
+function getVagrantXYCGoal(vagrantUnit) {
+
+  const { vagrantUnits, territory, units } = renderingState;
+  const { selectedUnit, draggingUnit, quantityBar } = getInternalState();
+
+  let { playerId, x, y, quantity, fighting, vagrant, vagrantData } = vagrantUnit;
+
+  let { toX, toY, start, end } = vagrantData;
+
+  let direction = getDirectionFromPosToPos(x, y, toX, toY);
+
+  let enemyAtDestination = false;
+  let unitAtDestination = units.find(unit => unit.x === toX && unit.y === toY);
+  if (unitAtDestination != null && unitAtDestination.playerId != playerId) {
+    enemyAtDestination = true;
+  }
+
+  if (!enemyAtDestination && !fighting) {
+    if (unitAtDestination) {
+      if (unitAtDestination.playerId == playerId && unitAtDestination.fighting) {
+        return { x: toX, y: toY, c: 1 };
+      }
+    }
+    return { x: toX, y: toY, c: 0 };
+  } else {
+    if (direction == "right") return { x: x + RenderConstants.VAGRANT_FIGHTING_INSET, y: y, c: 1 };
+    if (direction == "left") return { x: x - RenderConstants.VAGRANT_FIGHTING_INSET, y: y, c: 1 };
+    if (direction == "top") return { x: x, y: y - RenderConstants.VAGRANT_FIGHTING_INSET, c: 1 };
+    if (direction == "bottom") return { x: x, y: y + RenderConstants.VAGRANT_FIGHTING_INSET, c: 1 };
+  }
+  
 }
 
 function renderingHoveringTile() {
@@ -557,14 +649,18 @@ function renderTerritory() {
 }
 
 function renderSelectStartingPosition() {
-  const { territory, gridDimensions } = renderingState;
+  const { players, gridDimensions, playerId } = renderingState;
   const { width, height } = gridDimensions;
 
   for (let x = 0; x < width; x++) {
     for (let y = 0; y < height; y++) {
-      if (territory[y][x] === getMe().id) {
-        continue;
-      }
+
+      let auraRect = {
+        x: (x-1) * RenderConstants.CELL_WIDTH,
+        y: (y-1) * RenderConstants.CELL_HEIGHT,
+        width: RenderConstants.CELL_WIDTH*3,
+        height: RenderConstants.CELL_HEIGHT*3,
+      };
 
       let rect = {
         x: x * RenderConstants.CELL_WIDTH,
@@ -574,12 +670,20 @@ function renderSelectStartingPosition() {
       };
 
       if (mouseInRect(rect)) {
+
+        let canPlaceHere = isIsolatedPosition({x, y}, players.filter(p => p.id != playerId).map(p => p.startingPos).filter(s => s != null));
+
         ctx.globalAlpha = 0.4;
         ctx.fillStyle = "black";
         ctx.fillRect(rect);
+
+        ctx.globalAlpha = 0.3;
+        ctx.fillStyle = "green";
+        if (!canPlaceHere) ctx.fillStyle = "red";
+        ctx.fillRect(auraRect);
         ctx.globalAlpha = 1;
 
-        if (mouseClicked) {
+        if (canPlaceHere && mouseClicked) {
           registerClick(() => {
             emit(Constants.messages.chooseStartingPosition, { x, y });
           });
@@ -659,7 +763,7 @@ function renderDraggingUnit() {
 function getSoldierDimensions(padding=RenderConstants.SOLDIER_PADDING) {
 
   let imgHeight = RenderConstants.CELL_HEIGHT - padding*2;
-  let imgWidth = imgHeight * 430 / getAsset("soldier").height;
+  let imgWidth = imgHeight * getAsset("soldier").width / getAsset("soldier").height;
   
   return { imgHeight, imgWidth };
 }
@@ -678,6 +782,8 @@ function renderUnits() {
     }
 
     const rect = renderSoldier(x, y, quantityToDisplay, selectedUnit == id, fighting);
+
+    rect.width *= 0.5;
 
     if (mouseInRect(rect)) {
 
@@ -709,7 +815,7 @@ function renderSoldier(x, y, quantity, occilate, compact=false, arrowLabel=null)
     imgHeight = renderHeight;
 
     if(occilate) ctx.globalAlpha = sinusoidalTimeValue(0.5, 1, 100);
-    ctx.drawImage(img, 0, 0, 430, 630, imgX, imgY, renderWidth, renderHeight);
+    ctx.drawImage(img, imgX, imgY, renderWidth, renderHeight);
     ctx.globalAlpha = 1;
 
   } else {
@@ -717,9 +823,9 @@ function renderSoldier(x, y, quantity, occilate, compact=false, arrowLabel=null)
     let renderWidth = renderHeight * 430 / img.height;
     imgX = x * RenderConstants.CELL_WIDTH + (RenderConstants.CELL_WIDTH - renderWidth) / 2;
     imgY = y * RenderConstants.CELL_HEIGHT + RenderConstants.CELL_HEIGHT - padding - renderHeight;
-    ctx.drawImage(img, 0, 0, 430, 630, imgX, 2 + imgY, renderWidth, renderHeight);
-    ctx.drawImage(img, 0, 0, 430, 630, 15 + imgX, -2 + imgY, renderWidth, renderHeight);
-    ctx.drawImage(img, 0, 0, 430, 630, -10 + imgX, -4 + imgY, renderWidth, renderHeight);
+    ctx.drawImage(img, imgX, 2 + imgY, renderWidth, renderHeight);
+    ctx.drawImage(img, 15 + imgX, -2 + imgY, renderWidth, renderHeight);
+    ctx.drawImage(img, -10 + imgX, -4 + imgY, renderWidth, renderHeight);
   }
 
   
@@ -819,7 +925,7 @@ function drawArrow(fromx, fromy, tox, toy, arrowWidth, color){
 
 function handleMouseOverUnit(unit, rect) {
 
-  if (unit.playerId != getMe().id) return;
+  if (unit.playerId != renderingState.playerId) return;
 
   const { id } = unit;
 
@@ -939,4 +1045,10 @@ function getUnitById(unitId) {
   const { units, vagrantUnits } = renderingState;
 
   return getById(unitId, units) || getById(unitId, vagrantUnits);
+}
+
+function getPlayerById(playerId) {
+  const { players } = renderingState;
+
+  return getById(playerId, players);
 }

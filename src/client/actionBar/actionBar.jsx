@@ -1,6 +1,9 @@
 import React from 'react'
 import { getInternalState, getMe } from '../state';
+import { getDayTime } from '../utils';
 import styles from './actionBar.module.css';
+import TopBar from './topBar';
+import MainContent from './mainContent';
 
 let setGlobalActionBarState;
 let setGlobalActionBarInternalState;
@@ -22,6 +25,8 @@ const ActionBar = () => {
   setGlobalActionBarState = setReactActionBarState;
   setGlobalActionBarInternalState = setReactActionBarInternalState;
 
+  const me = getMe();
+
   if (actionBarState === null) {
     return <div>Loading</div>;
   }
@@ -31,14 +36,17 @@ const ActionBar = () => {
   }
 
   if (actionBarState.stage === "pregame") {
-    return <div>Select your starting position</div>;
+    return <center className={styles.actionBar}>Select your starting position</center>;
   }
 
   return (
     <div className={styles.actionBar}>
-      Day: {actionBarState.day}
-      <br />
-      Gold: {getMe().gold}
+      <div className={styles.actionBarTop}>
+        <TopBar day={actionBarState.day} gold={me.gold} wood={0} oil={0} time={getDayTime(actionBarState.dayStart, actionBarState.dayEnd)}></TopBar>
+      </div>
+      <div className={styles.actionBarContent}>
+        <MainContent />
+      </div>
     </div>
   )
 }

@@ -78,6 +78,10 @@ function handleMouseUp(evt) {
 
 function handleWheel(evt) {
 
+  console.log(evt);
+
+  evt.preventDefault();
+
   scrollHandler(evt.deltaY);
 
 }

@@ -1,0 +1,95 @@
+
+.mainContent {
+
+  height: 150px;
+
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  overflow-y: auto;
+
+}
+
+.item {
+
+  display: flex;
+  flex-direction: column;
+  width: 140px;
+  height: 150px;
+  padding: 5px;
+  margin: 0px 0px 5px 0px;
+  font-size: 12px;
+
+  box-sizing: border-box;
+
+  position: relative;
+
+  border-right: 1px solid #aaa;
+
+}
+
+.item:first-child {
+  border-left: 1px solid #aaa;
+}
+
+.itemHeader {
+
+  height: 15px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+
+}
+
+.itemCost {
+
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  height: 15px;
+
+}
+
+.itemCostType {
+
+  display: flex;
+  flex-direction: row;
+
+  align-items: center;
+  margin: 0px 5px;
+
+}
+
+.icon {
+
+  height: 18px;
+  margin-right: 6px;
+
+}
+
+.label {
+
+  font-size: 14px;
+
+}
+
+.itemImageWrapper {
+
+  height: 110px;
+
+  position: relative;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+}
+
+.itemImage {
+  height: 100%;
+}

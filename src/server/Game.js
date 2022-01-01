@@ -1,5 +1,7 @@
 const { Player } = require("./Player");
 const { Unit } = require("./Unit");
+const { City } = require("./City");
+
 const { updateStates } = require("./SocketWrapper");
 
 const { generateEmptyTerritory, getEmptyPositions } = require("./territory");
@@ -7,7 +9,7 @@ const { generateRandomLand } = require("./land");
 const Constants = require("../shared/constants");
 const Joi = require("joi");
 const { colors, pickRandom } = require("./utils");
-const { isAdjescent } = require("../shared/utils");
+const { isAdjescent, isIsolatedPosition } = require("../shared/utils");
 
 class Game {
 
@@ -26,11 +28,18 @@ class Game {
     this.land = generateRandomLand(this.gridDimensions.width, this.gridDimensions.height);
     this.units = [];
     this.vagrantUnits = [];
+    this.cities = [];
+
+    this.dayStart = null;
 
     this.setupPregame(config.waitTime);
 
     this.sendSyncUpdate();
 
+  }
+
+  getStartingPositions(playerId=null) {
+    return this.players.filter(p => p.id != playerId).map(p => p.startingPos).filter(s => s != null);
   }
 
   setupPregame(waitTime) {
@@ -47,19 +56,20 @@ class Game {
         respond: input => {
           const { x, y } = input;
 
-          if (this.territory[y][x] !== null) {
-            player.socket.emitError("Position is already occupied.");
+          if (!isIsolatedPosition({x, y}, this.getStartingPositions(player.id))) {
+            player.socket.emitError("Position is too close to someone else's.");
             return;
           }
 
-          this.territory.forEach(row => {
-            row.forEach((val, i) => {
-              if (val === player.id) {
-                row[i] = null;
-              }
-            });
-          });
+          let previousPos = player.startingPos;
+
+          if (previousPos) {
+            this.territory[previousPos.y][previousPos.x] = null;
+          }
+
           this.territory[y][x] = player.id;
+
+          player.startingPos = { x, y };
 
           this.sendSyncUpdate();
         },
@@ -77,6 +87,10 @@ class Game {
     
     this.ensureStartingTile();
 
+    this.spawnInitialCities();
+
+    this.spawnInitialUnits();
+
     this.registerGameEvents();
 
     this.sendSyncUpdate();
@@ -85,32 +99,52 @@ class Game {
     
   }
 
+  spawnInitialCities() {
+
+    this.players.forEach(player => {
+
+      const { x, y } = player.startingPos;
+
+      const city = new City(this, x, y);
+
+      this.cities.push(city);
+
+    });
+
+  }
+
+  spawnInitialUnits() {
+      
+    this.players.forEach(player => {
+
+      const { x, y } = player.startingPos;
+
+      const unit = new Unit(this, player, x, y, 10);
+
+      this.units.push(unit);
+
+    });
+  
+  }
+
   ensureStartingTile() {
     this.players.forEach(player => {
 
-      let startingPos;
-
-      for (let y = 0; y < this.gridDimensions.height; y++) {
-        for (let x = 0; x < this.gridDimensions.width; x++) {
-          if (this.territory[y][x] === player.id) {
-            startingPos = { x, y };
-          }
-        }
-      }
+      let startingPos = player.startingPos;
 
       if (!startingPos) {
         player.socket.emitError("You didn't choose your starting position. A random one has been selected for you.");
         
-        const { x, y } = pickRandom(getEmptyPositions(this.territory));
+        let emptyPositions = getEmptyPositions(this.territory);
+        
+        let isolatedPositions = emptyPositions.filter(pos => isIsolatedPosition(pos, this.getStartingPositions(player.id)));
+
+        const { x, y } = pickRandom(isolatedPositions);
 
         this.territory[y][x] = player.id;
 
-        startingPos = { x, y };
+        player.startingPos = { x, y };
       }
-
-      player.startingPos = startingPos;
-
-      this.units.push(new Unit(this, player, startingPos.x, startingPos.y, 10));
 
     });
   }
@@ -239,6 +273,8 @@ class Game {
 
   tickGame() {
 
+    this.dayStart = Date.now();
+
     this.day++;
     this.players.forEach(player => {
       player.gold += this.config.goldPerDay;
@@ -246,7 +282,7 @@ class Game {
 
     this.sendSyncUpdate();
 
-    setTimeout(this.tickGame.bind(this), 3000);
+    setTimeout(this.tickGame.bind(this), this.config.dayLength);
 
   }
 
@@ -274,6 +310,7 @@ class Game {
         units: this.units.map(unit => unit.toClient()),
         vagrantUnits: this.vagrantUnits.map(unit => unit.toClient()),
         land: this.land,
+        cities: this.cities.map(c => c.toClient()),
       };
   
       if (this.stage === "pregame") {
@@ -282,6 +319,11 @@ class Game {
 
       if (this.stage === "game") {
         baseObj.day = this.day;
+
+        if (this.dayStart) {
+          baseObj.dayStart = this.dayStart;
+          baseObj.dayEnd = this.dayStart + this.config.dayLength;
+        }
       }
       
       return baseObj;

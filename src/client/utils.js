@@ -6,6 +6,8 @@ const errors = document.getElementById('errors');
 
 export function displayError(error) {
 
+  console.warn(error);
+
   // create div.error
   const div = document.createElement('div');
   div.classList.add('error');
@@ -80,4 +82,25 @@ export function getQuantityBarAmount() {
   const { quantityBar } = getInternalState();
 
   return Math.max(1, Math.floor(quantityBar.percentage * quantityBar.max));
+}
+
+export function getDayTime(start, end) {
+
+  let length = end - start;
+  let delta = Date.now() - start;
+
+  let progress = delta / length;
+
+  if (progress > 1) progress = 1;
+
+  let minutesInADay = 24 * 60;
+
+  let minutes = Math.floor(minutesInADay * progress);
+
+  let hours = Math.floor(minutes / 60);
+
+  let minutesLeft = minutes % 60;
+
+  return `${hours}:${minutesLeft < 10 ? '0' : ''}${minutesLeft}`;
+
 }

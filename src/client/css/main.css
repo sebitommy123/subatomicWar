@@ -123,10 +123,10 @@ html, body {
 .actionBar {
 
   position: fixed;
-  bottom: -100px;
+  bottom: -150px;
   left: 0px;
   width: 100%;
-  height: 150px;
+  height: 200px;
   background-color: #eee;
   display: flex;
   align-items: center;
@@ -137,7 +137,7 @@ html, body {
 
 }
 
-.actionBar:hover {
+.actionBar/*:hover*/ {
 
   bottom: 0px;
 
@@ -145,6 +145,11 @@ html, body {
 
 .actionBarContent {
   
+  position: absolute;
+  left: 0px;
+  top: 0px;
+  width: 100%;
+  height: 100%;
   display: flex;
 
 }
@@ -157,13 +162,6 @@ html, body {
   height: 50px;
   align-items: center;
   font-size: 12;
-  color: #888;
-
-  transition: height 0.5s, color 0.5s;
-
-}
-
-.actionBar:hover .actionBarTip {
   
   height: 20px;
   color: #ccc;

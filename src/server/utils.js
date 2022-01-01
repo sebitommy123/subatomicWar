@@ -3,7 +3,6 @@ const sanitizeHtml = require("sanitize-html");
 const colors = [
   "#55DDE0",
   "#33658A",
-  "#2F4858",
   "#F6AE2D",
   "#F26419",
   "#B744B8",
@@ -14,6 +13,7 @@ const colors = [
   "#2B2D42",
   "#F7EC59",
   "#FF66D8",
+  "#2F4858",
 ];
 
 function htmlentities(str) {

@@ -12,7 +12,8 @@ class Unit {
     this.y = y;
     this.quantity = quantity;
     this.fighting = false;
-    this.retreating = false;
+    this.fightingStart = null;
+    this.retreating = retreating;
     this.engagedUnits = [];
     this.vagrant = vagrant;
     this.vagrantData = vagrantData;
@@ -52,11 +53,19 @@ class Unit {
   }
 
   remove() {
-    if (this.vagrant && this.fighting) {
+
+    let wasFighting = this.fighting;
+    
+    this.fighting = false;
+
+    if (this.vagrant && wasFighting) {
       let fightingUnit = this.game.getUnitAtPosition(this.vagrantData.toX, this.vagrantData.toY);
       if(fightingUnit) fightingUnit.disengage(this);
     }
+
+    if(!this.vagrant && wasFighting) this.resolveFightUponLoss();
     
+    //THIS HAPPENS LAST!! KEEP IT LAST!
     this.game.units = this.game.units.filter(u => u.id != this.id);
     this.game.vagrantUnits = this.game.vagrantUnits.filter(u => u.id != this.id);
   }
@@ -84,8 +93,77 @@ class Unit {
       this.engagedUnits.push(unit);
     }
 
+    let wasFighting = this.fighting;
+
     unit.fighting = true;
     this.fighting = true;
+
+    if (!wasFighting){
+      this.startFight();
+    } 
+
+  }
+
+  startFight() {
+    this.fightingStart = Date.now();
+
+    setTimeout(this.evolveFight.bind(this), this.game.config.fightInitialDelay);
+  }
+
+  takeDamage(damage) {
+    this.quantity -= damage;
+    if (this.quantity <= 0) this.remove();
+  }
+
+  evolveFight() {
+
+    [...this.engagedUnits].forEach(enemy => {
+
+      if (!this.fighting) return; // stop if dead
+
+      let damage = Math.max(1, Math.min(Math.abs(this.quantity - enemy.quantity), this.quantity, enemy.quantity));
+
+      enemy.takeDamage(damage);
+      this.takeDamage(damage);
+      
+    });
+
+    this.game.sendSyncUpdate();
+
+    if(this.fighting) setTimeout(this.evolveFight.bind(this), this.game.config.fightSpeed);
+
+  }
+
+  resolveFightUponLoss() {
+
+    if (this.engagedUnits.length == 0) {
+      return;
+    }
+
+    let winningPlayer = this.engagedUnits[0].player;
+
+    let totalWinningUnits = this.engagedUnits.reduce((total, unit) => {
+      if (unit.player.id != winningPlayer.id) return total;
+      return total + unit.quantity;
+    }, 0);
+
+    let newWinningUnit = new Unit(this.game, winningPlayer, this.x, this.y, totalWinningUnits);
+    this.game.units.push(newWinningUnit);
+
+    [...this.engagedUnits].forEach(unit => {
+      console.log(unit);
+      if(unit.player.id == winningPlayer.id) unit.remove();
+    });
+
+    console.log(this.engagedUnits.length);
+
+    if (this.engagedUnits.length > 0) {
+      this.engagedUnits.forEach(unit => {
+        newWinningUnit.engage(unit);
+      });
+    }
+
+    this.game.territory[this.y][this.x] = winningPlayer.id;
 
   }
 
@@ -102,6 +180,7 @@ class Unit {
       fighting: this.fighting,
       engagedUnits: this.engagedUnits.map(u => u.id),
       retreating: this.retreating,
+      fightingStart: this.fightingStart
     }
 
   }

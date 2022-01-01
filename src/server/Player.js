@@ -9,6 +9,8 @@ class Player {
 
     this.gold = gold;
     this.color = color;
+
+    this.startingPos = null;
   }
 
   isEnemyTile(x, y) {
@@ -30,6 +32,7 @@ class Player {
       id: this.id,
       name: this.name,
       color: this.color,
+      startingPos: this.startingPos
     };
   }
 
