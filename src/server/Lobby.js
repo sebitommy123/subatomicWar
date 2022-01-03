@@ -18,8 +18,8 @@ class Lobby {
       },
       waitTime: 15, // time for players to choose starting positions
       dayLength: 10 * 1000, // length of a day in milliseconds
-      startingResources: { gold: 20, wood: 20, oil: 20 }, // starting resources
-      resourcesPerDay: { gold: 5, wood: 5, oil: 0 }, // gold per day naturally
+      startingResources: { gold: 0, wood: 0, oil: 0 }, // starting resources
+      resourcesPerDay: { gold: 10, wood: 5, oil: 0 }, // resources per day naturally
       vagrantMoveTime: 3000, // time required for unit to move from tile to tile
       fightTime: 1000, // i have no idea??????????
       fightSpeed: 2000, // ms in between fighting turns

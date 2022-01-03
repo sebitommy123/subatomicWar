@@ -1081,7 +1081,7 @@ function renderTerritory() {
 }
 
 function renderSelectStartingPosition() {
-  const { players, gridDimensions, playerId } = renderingState;
+  const { players, gridDimensions, playerId, land } = renderingState;
   const { width, height } = gridDimensions;
 
   for (let x = 0; x < width; x++) {
@@ -1104,6 +1104,9 @@ function renderSelectStartingPosition() {
       if (mouseInRect(rect)) {
 
         let canPlaceHere = isIsolatedPosition({x, y}, players.filter(p => p.id != playerId).map(p => p.startingPos).filter(s => s != null));
+        
+        const tile = land[y][x];
+        if (tile == "water" || tile == "oil") canPlaceHere = false;
 
         ctx.globalAlpha = 0.4;
         ctx.fillStyle = "black";

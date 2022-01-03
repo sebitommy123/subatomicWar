@@ -65,6 +65,9 @@ class Game {
             return;
           }
 
+          const tile = this.land[y][x];
+          if (tile == "water" || tile == "oil") return;
+
           let previousPos = player.startingPos;
 
           if (previousPos) {

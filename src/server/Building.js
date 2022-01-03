@@ -54,13 +54,13 @@ class Building {
 
     if (p && this.isActive()) {
       if (this.type.name === "Gold mine") {
-        p.gold += 10 * this.getLandEfficiency();
+        p.gold += Math.ceil(5 * this.getLandEfficiency());
       }
       if (this.type.name === "Lumber mill") {
-        p.wood += 10 * this.getLandEfficiency();
+        p.wood += Math.ceil(5 * this.getLandEfficiency());
       }
       if (this.type.name === "Oil rig") {
-        p.wood += 10 * this.getLandEfficiency();
+        p.oil += Math.ceil(5 * this.getLandEfficiency());
       }
       if (this.type.name === "Farm") {
         this.getCity().foodThisTick += 1;

@@ -176,8 +176,8 @@ class Shop {
 
     this.addItem({
       name: "Gold mine",
-      desc: "Yields 10 gold per turn",
-      cost: { wood: 10 },
+      desc: "Yields 5 gold per turn",
+      cost: { wood: 100 },
       image: "mine.png",
       type: "building",
       blacklist: {
@@ -192,8 +192,8 @@ class Shop {
 
     this.addItem({
       name: "Lumber mill",
-      desc: "Yields 10 wood per turn",
-      cost: { wood: 10 },
+      desc: "Yields 5 wood per turn",
+      cost: { wood: 80 },
       image: "lumbermill.png",
       type: "building",
       blacklist: {
@@ -209,7 +209,7 @@ class Shop {
     this.addItem({
       name: "Farm",
       desc: "Doubles city growth speed",
-      cost: { wood: 10 },
+      cost: { wood: 140 },
       image: "farm.png",
       type: "building",
       blacklist: {
@@ -224,8 +224,8 @@ class Shop {
 
     this.addItem({
       name: "Oil rig",
-      desc: "Yields 10 oil per turn",
-      cost: { wood: 10 },
+      desc: "Yields 5 oil per turn",
+      cost: { wood: 200 },
       image: "oilRig.png",
       type: "building",
       blacklist: {
@@ -241,7 +241,7 @@ class Shop {
     this.addItem({
       name: "City",
       desc: "Settle a new city",
-      cost: { wood: 10, gold: 10 },
+      cost: { wood: 50, gold: 200 },
       image: "city.png",
       type: "city",
       blacklist: {
