@@ -69,16 +69,16 @@ function callAnimationLoop(func) {
 
 function render() {
 
+  tickStart();
+
   if (renderingState.screen === "game" && renderingState.stage === "game") {
 
     const { selectedUnit } = getInternalState();
-    if (!getUnitById(selectedUnit)) {
+    if (selectedUnit && !getUnitById(selectedUnit)) {
       stopAllPlacing();
     }
 
   }
-
-  tickStart();
 
   ctx.fillStyle = "#d4f1f9";
   ctx.abs.fillRect(0, 0, canvas.width, canvas.height);
