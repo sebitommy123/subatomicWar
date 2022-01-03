@@ -10,7 +10,7 @@ const Constants = require("../shared/constants");
 const Joi = require("joi");
 const { colors, pickRandom } = require("./utils");
 const { isAdjescent, isIsolatedPosition } = require("../shared/utils");
-const { Shop } = require("./shop");
+const { Shop } = require("./Shop");
 
 class Game {
 
