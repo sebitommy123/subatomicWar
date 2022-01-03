@@ -185,7 +185,7 @@ class Shop {
         desert: { allowed: true, efficiency: 0.5 },
         plains: { allowed: true },
         forest: { allowed: true },
-        mountains: { allowed: true, efficiency: 1.5 },
+        mountains: { allowed: true, efficiency: 2 },
         oil: { allowed: false },
       }
     });

@@ -31,7 +31,7 @@ class Building {
 
   getBlacklistItem() {
 
-    return this.type.blacklist[this.game.territory[this.y][this.x]];
+    return this.type.blacklist[this.game.land[this.y][this.x]];
 
   }
 

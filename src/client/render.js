@@ -446,7 +446,7 @@ function renderPurchasingBuilding() {
     let innerPadding = 3;
     let marginBottom = 6;
 
-    let boxWidth = 15;
+    let boxWidth = 22;
 
     let totalWidth = boxWidth + innerMargin + innerPadding*2 + textWidth;
     let totalHeight = innerPadding * 2 + fontSize;
