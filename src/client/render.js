@@ -4,7 +4,7 @@ import { debounce } from 'throttle-debounce';
 import { getAsset } from './assets';
 import BetterCtx from './betterCtx';
 import { updateStageInfo } from './stageInfo';
-import { registerClick, mouseClicked, tickEnd, tickStart, registerDraggableSurface, mouseX, mouseY, registerNonDraggableSurface, registerScrollableSurface, registerNonScrollableSurface, registerNextMouseUpHandler, gameMouseY, gameMouseX, registerNextUnhandledClickHandler, tileMouseX, tileMouseY } from './userInput';
+import { registerClick, mouseClicked, tickEnd, tickStart, registerDraggableSurface, mouseX, mouseY, registerNonDraggableSurface, registerScrollableSurface, registerNonScrollableSurface, registerNextMouseUpHandler, gameMouseY, gameMouseX, registerNextUnhandledClickHandler, tileMouseX, tileMouseY, stopAllPlacing } from './userInput';
 import { canBuyResource, decayingQuantity, displayError, getHoveringTileCoords, getMaxUnitPurchase, getQuantityBarAmount, getQuantityBarPurchaseCost, getResources, inBounds, mouseInLastRect, mouseInRect, pointInRect, sinusoidalTimeValue } from './utils';
 import { emit } from './networking';
 
@@ -35,18 +35,6 @@ export function setRenderingState(newState) {
 
   if (newState.territory && lastState.territory != newState.territory) {
     recomputeTerritoryNeighbors();
-  }
-
-  if (newState.screen === "game" && newState.stage === "game") {
-
-    const { selectedUnit } = getInternalState();
-    if (!getUnitById(selectedUnit)) {
-      mutateInternalState(state => {
-        state.selectedUnit = null;
-        state.draggingUnit = null;
-      });
-    }
-
   }
 
 }
@@ -80,6 +68,15 @@ function callAnimationLoop(func) {
 }
 
 function render() {
+
+  if (renderingState.screen === "game" && renderingState.stage === "game") {
+
+    const { selectedUnit } = getInternalState();
+    if (!getUnitById(selectedUnit)) {
+      stopAllPlacing();
+    }
+
+  }
 
   tickStart();
 
@@ -1519,7 +1516,10 @@ function renderLabel(text, labelX, labelY) {
 function getUnitById(unitId) {
   const { units, vagrantUnits } = renderingState;
 
-  return getById(unitId, units) || getById(unitId, vagrantUnits);
+  let unit = getById(unitId, units);
+  if (unit) return p;
+
+  return getById(unitId, vagrantUnits);
 }
 
 function getPlayerById(playerId) {
