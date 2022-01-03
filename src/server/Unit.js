@@ -10,6 +10,8 @@ class Unit {
     this.player = player;
     this.x = x;
     this.y = y;
+    this.lastQuantity = quantity;
+    this.lastQuantityChange = null;
     this.quantity = quantity;
     this.fighting = false;
     this.fightingStart = null;
@@ -18,6 +20,12 @@ class Unit {
     this.vagrant = vagrant;
     this.vagrantData = vagrantData;
 
+  }
+
+  setQuantityAnimating(quantity) {
+    this.lastQuantity = this.quantity;
+    this.lastQuantityChange = Date.now();
+    this.quantity = quantity;
   }
 
   intake(unit) {
@@ -111,7 +119,7 @@ class Unit {
   }
 
   takeDamage(damage) {
-    this.quantity -= damage;
+    this.setQuantityAnimating(Math.max(this.quantity - damage, 0));
     if (this.quantity <= 0) this.remove();
   }
 
@@ -175,6 +183,8 @@ class Unit {
       x: this.x,
       y: this.y,
       quantity: this.quantity,
+      lastQuantity: this.lastQuantity,
+      lastQuantityChange: this.lastQuantityChange,
       vagrant: this.vagrant,
       vagrantData: this.vagrantData,
       fighting: this.fighting,

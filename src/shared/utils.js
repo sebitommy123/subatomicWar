@@ -25,6 +25,23 @@ function getAdjescentPositions(position) {
   return adjescentPositions;
 }
 
+function getRingPositions(position) {
+
+  let ringPositions = [];
+
+  ringPositions.push({ x: position.x - 1, y: position.y - 1 });
+  ringPositions.push({ x: position.x - 1, y: position.y });
+  ringPositions.push({ x: position.x - 1, y: position.y + 1 });
+  ringPositions.push({ x: position.x, y: position.y - 1 });
+  ringPositions.push({ x: position.x, y: position.y + 1 });
+  ringPositions.push({ x: position.x + 1, y: position.y - 1 });
+  ringPositions.push({ x: position.x + 1, y: position.y });
+  ringPositions.push({ x: position.x + 1, y: position.y + 1 });
+
+  return ringPositions;
+
+}
+
 function isAdjescent(from, to) {
   return getAdjescentPositions(from).some(position => position.x == to.x && position.y == to.y);
 }
@@ -42,8 +59,44 @@ function isIsolatedPosition(position, occupiedPositions) {
 
 }
 
+function getAuraPositions(cityPositions) {
+
+  let auraPositions = [];
+
+  cityPositions.forEach(city => {
+
+    auraPositions = auraPositions.concat(getRingPositions(city));
+
+  });
+
+  return auraPositions;
+
+}
+
+function positionInPositionList(position, positionList) {
+
+  return positionList.some(positionInList => positionInList.x == position.x && positionInList.y == position.y);
+  
+}
+
+function resolveTerritoryBlacklist(blacklist, tile) {
+
+  let elm = blacklist[tile];
+
+  if (!elm) return {
+    allowed: true,
+  };
+
+  return elm;
+  
+}
+
 module.exports = {
   isAdjescent,
   getAdjescentPositions,
-  isIsolatedPosition
+  isIsolatedPosition,
+  getAuraPositions,
+  positionInPositionList,
+  resolveTerritoryBlacklist,
+  getRingPositions
 }

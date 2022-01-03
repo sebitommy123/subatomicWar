@@ -17,7 +17,7 @@
   display: flex;
   flex-direction: column;
   width: 140px;
-  height: 150px;
+  height: 140px;
   padding: 5px;
   margin: 0px 0px 5px 0px;
   font-size: 12px;
@@ -28,6 +28,14 @@
 
   border-right: 1px solid #aaa;
 
+  cursor: pointer;
+
+  transition: all 0.2s ease-in-out;
+
+}
+
+.item:hover {
+  background-color: #e8e8e8;
 }
 
 .item:first-child {
@@ -36,12 +44,24 @@
 
 .itemHeader {
 
-  height: 15px;
+  height: 20px;
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   font-size: 14px;
+
+}
+
+.title {
+
+  font-size: 11px;
+
+}
+
+.description {
+  
+  font-size: 8px;
 
 }
 
@@ -80,13 +100,16 @@
 
 .itemImageWrapper {
 
-  height: 110px;
+  height: 95px;
+  padding: 10px;
 
   position: relative;
 
   display: flex;
   justify-content: center;
   align-items: center;
+
+  box-sizing: border-box;
 
 }
 

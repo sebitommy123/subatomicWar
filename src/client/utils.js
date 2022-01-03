@@ -1,5 +1,5 @@
 import { ctx, RenderConstants } from "./render";
-import { getInternalState } from "./state";
+import { getInternalState, getMe } from "./state";
 import { gameMouseX, gameMouseY } from "./userInput";
 
 const errors = document.getElementById('errors');
@@ -103,4 +103,42 @@ export function getDayTime(start, end) {
 
   return `${hours}:${minutesLeft < 10 ? '0' : ''}${minutesLeft}`;
 
+}
+
+export function getMaxUnitPurchase(shopItems) {
+  return Math.floor(getMe().gold / shopItems.find(s => s.type == "unit").cost.gold);
+}
+
+export function multiplyCost(cost, quantity) {
+  return {
+    gold: cost.gold ? cost.gold * quantity : null,
+    wood: cost.wood ? cost.wood * quantity : null,
+    oil: cost.oil ? cost.oil * quantity : null,
+  }
+}
+
+export function getQuantityBarPurchaseCost(shopItems) {
+
+  return multiplyCost(shopItems.find(s => s.type == "unit").cost, getQuantityBarAmount());
+
+}
+
+export function decayingQuantity(quantity, decay) {
+  return Math.cos(decay * Math.PI * 0.7 - Math.PI * 0.2) * quantity;
+}
+
+export function canBuyResource(cost, resources) {
+  return Object.keys(cost).every(resource => resources[resource] >= cost[resource]);
+}
+
+export function getResources() {
+  return {
+    gold: getMe().gold,
+    wood: getMe().wood,
+    oil: getMe().oil
+  }
+}
+
+export function inBounds(x, y, maxX, maxY) {
+  return x >= 0 && x < maxX && y >= 0 && y < maxY;
 }

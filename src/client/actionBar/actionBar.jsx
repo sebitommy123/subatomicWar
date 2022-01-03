@@ -42,10 +42,10 @@ const ActionBar = () => {
   return (
     <div className={styles.actionBar}>
       <div className={styles.actionBarTop}>
-        <TopBar day={actionBarState.day} gold={me.gold} wood={0} oil={0} time={getDayTime(actionBarState.dayStart, actionBarState.dayEnd)}></TopBar>
+        <TopBar day={actionBarState.day} gold={me.gold} wood={me.wood} oil={me.oil} time={getDayTime(actionBarState.dayStart, actionBarState.dayEnd)}></TopBar>
       </div>
       <div className={styles.actionBarContent}>
-        <MainContent />
+        <MainContent shopItems={actionBarState.shopItems}/>
       </div>
     </div>
   )

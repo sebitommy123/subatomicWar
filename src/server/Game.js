@@ -10,6 +10,7 @@ const Constants = require("../shared/constants");
 const Joi = require("joi");
 const { colors, pickRandom } = require("./utils");
 const { isAdjescent, isIsolatedPosition } = require("../shared/utils");
+const { Shop } = require("./shop");
 
 class Game {
 
@@ -22,15 +23,18 @@ class Game {
 
     this.gridDimensions = config.gridDimensions;
 
-    this.players = playerSockets.map((s, i) => new Player(this, s, colors[i], config.startingGold));
+    this.players = playerSockets.map((s, i) => new Player(this, s, colors[i], config.startingResources));
 
     this.territory = generateEmptyTerritory(this.gridDimensions.width, this.gridDimensions.height);
     this.land = generateRandomLand(this.gridDimensions.width, this.gridDimensions.height);
     this.units = [];
     this.vagrantUnits = [];
     this.cities = [];
+    this.buildings = [];
 
     this.dayStart = null;
+    
+    this.shop = null;
 
     this.setupPregame(config.waitTime);
 
@@ -93,6 +97,8 @@ class Game {
 
     this.registerGameEvents();
 
+    this.shop = new Shop(this);
+
     this.sendSyncUpdate();
 
     this.tickGame();
@@ -114,12 +120,14 @@ class Game {
   }
 
   spawnInitialUnits() {
+
+    if (this.config.startingTroops == 0) return;
       
     this.players.forEach(player => {
 
       const { x, y } = player.startingPos;
 
-      const unit = new Unit(this, player, x, y, 10);
+      const unit = new Unit(this, player, x, y, this.config.startingTroops);
 
       this.units.push(unit);
 
@@ -265,6 +273,40 @@ class Game {
 
   }
 
+  getBuildingAtPosition(x, y) {
+
+    return this.buildings.find(b => b.x === x && b.y === y);
+
+  }
+
+  getCityAtPosition(x, y) {
+
+    return this.cities.find(c => c.x === x && c.y === y);
+
+  }
+
+  getPlayerAtPosition(x, y) {
+    let playerId = this.territory[y][x];
+
+    if (playerId == null) {
+      return null;
+    }
+
+    return this.getPlayerById(playerId);
+  }
+
+  getCityAuraAtPosition(x, y) {
+
+    return this.cities.find(city => {
+
+      if (city.x == x && city.y == y) return false; //a city is not in its own aura
+
+      return Math.abs(city.x - x) <= 1 && Math.abs(city.y - y) <= 1;
+
+    });
+
+  }
+
   getUnitById(id) {
 
     return this.units.find(u => u.id == id) || this.vagrantUnits.find(u => u.id == id);
@@ -277,7 +319,16 @@ class Game {
 
     this.day++;
     this.players.forEach(player => {
-      player.gold += this.config.goldPerDay;
+      player.pay(this.shop.multiplyCost(this.config.resourcesPerDay, -1));
+    });
+
+    
+    this.buildings.forEach(building => {
+      building.tick();
+    });
+    
+    this.cities.forEach(city => {
+      city.tick();
     });
 
     this.sendSyncUpdate();
@@ -293,6 +344,10 @@ class Game {
       player.socket.emitState();
     });
 
+  }
+
+  getPlayerById(pid) {
+    return this.players.find(p => p.id == pid);
   }
 
   sendSyncUpdate() {
@@ -311,6 +366,7 @@ class Game {
         vagrantUnits: this.vagrantUnits.map(unit => unit.toClient()),
         land: this.land,
         cities: this.cities.map(c => c.toClient()),
+        buildings: this.buildings.map(b => b.toClient()),
       };
   
       if (this.stage === "pregame") {
@@ -324,6 +380,8 @@ class Game {
           baseObj.dayStart = this.dayStart;
           baseObj.dayEnd = this.dayStart + this.config.dayLength;
         }
+
+        baseObj.shopItems = this.shop.getClientItems();
       }
       
       return baseObj;

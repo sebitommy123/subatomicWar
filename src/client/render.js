@@ -4,13 +4,13 @@ import { debounce } from 'throttle-debounce';
 import { getAsset } from './assets';
 import BetterCtx from './betterCtx';
 import { updateStageInfo } from './stageInfo';
-import { registerClick, mouseClicked, tickEnd, tickStart, registerDraggableSurface, mouseX, mouseY, registerNonDraggableSurface, registerScrollableSurface, registerNonScrollableSurface, registerNextMouseUpHandler, gameMouseY, gameMouseX, registerNextUnhandledClickHandler } from './userInput';
-import { getHoveringTileCoords, getQuantityBarAmount, mouseInRect, pointInRect, sinusoidalTimeValue } from './utils';
+import { registerClick, mouseClicked, tickEnd, tickStart, registerDraggableSurface, mouseX, mouseY, registerNonDraggableSurface, registerScrollableSurface, registerNonScrollableSurface, registerNextMouseUpHandler, gameMouseY, gameMouseX, registerNextUnhandledClickHandler, tileMouseX, tileMouseY } from './userInput';
+import { canBuyResource, decayingQuantity, displayError, getHoveringTileCoords, getMaxUnitPurchase, getQuantityBarAmount, getQuantityBarPurchaseCost, getResources, inBounds, mouseInLastRect, mouseInRect, pointInRect, sinusoidalTimeValue } from './utils';
 import { emit } from './networking';
 
 import Constants from '../shared/constants';
 import { getById, getInternalState, getMe, mutateInternalState, flipNeighborList, clockwiseDir, getTerritoryDirFrom, getTerritoryDirPositionFrom, getDirectionFromPosToPos } from './state';
-import { getAdjescentPositions, isAdjescent, isIsolatedPosition } from '../shared/utils';
+import { getAdjescentPositions, getAuraPositions, getRingPositions, isAdjescent, isIsolatedPosition, positionInPositionList, resolveTerritoryBlacklist } from '../shared/utils';
 
 let animationTickCounter = 0;
 let animationTick = 0;
@@ -105,15 +105,21 @@ function render() {
 
     if (renderingState.stage === "game") {
       renderCities();
+      renderBuildings();
 
       renderingHoveringTile();
 
       renderUnits();
       renderDraggingUnit();
       renderVagrantUnits();
+
+      renderPurchasingUnit();
+      renderPurchasingBuilding();
+      renderPurchasingCity();
     }
 
-    
+    renderEscapeMessage();
+
     computeQuantityBar();
     drawQuantityBar();
   }
@@ -122,14 +128,403 @@ function render() {
 
 }
 
+function renderBuildings() {
+
+  const { buildings } = renderingState;
+
+  buildings.forEach(building => {
+      
+    let { x, y, type } = building;
+
+    let asset = getAsset(type.image.split('.')[0]);
+
+    drawBuilding(asset, x, y);
+
+  });
+
+}
+
+function renderEscapeMessage() {
+
+  const { draggingUnit, selectedUnit, buyingUnit, buyingBuilding, buyingCity } = getInternalState();
+
+  if (!draggingUnit && !selectedUnit && !buyingUnit && !buyingBuilding && !buyingCity) return;
+
+  ctx.abs.font = "15px Arial";
+  let width = ctx.abs.measureText("Press Escape to cancel").width;
+
+  ctx.abs.fillStyle = "#540017";
+  ctx.abs.fillRect(canvas.width/2 - width/2 - 10, 50, width + 20, 40);
+
+  ctx.abs.textAlign = "center";
+  ctx.abs.textBaseline = "middle";
+  ctx.abs.fillStyle = "#ffffff";
+  ctx.abs.fillText("Press Escape to cancel", canvas.width/2, 70);
+
+}
+
+function renderCost(cost, x, y) {
+
+  // delete null values from object cost
+  for (let key in cost) {
+    if (cost[key] === null) {
+      delete cost[key];
+    }
+  }
+
+  const padding = 4;
+  const iconWidth = 13;
+  const iconHeight = 13;
+  const iconMarginRight = 6;
+  const costSeparation = 10;
+
+  ctx.fontSize = iconHeight;
+  const cumTextWidth = Object.values(cost).reduce((total, quantity) => total + ctx.measureText(quantity).width, 0);
+
+  const boxWidth = padding*2 + Object.keys(cost).length * (iconWidth + iconMarginRight + costSeparation) + cumTextWidth - costSeparation;
+  
+  x -= boxWidth/2;
+  
+  ctx.fillStyle = "#404040";
+  ctx.fillRect(x, y, boxWidth, iconHeight + padding*2);
+
+  Object.keys(cost).forEach((resource, i) => {
+
+    const image = getAsset(resource);
+    const quantity = cost[resource];
+
+    const textWidth = ctx.measureText(quantity).width;
+
+    const thisX = x + padding + i * (iconWidth + iconMarginRight + costSeparation + textWidth);
+    const thisY = y + padding;
+
+    ctx.drawImage(image, thisX, thisY, iconWidth, iconHeight);
+
+    ctx.fillStyle = "#ffffff";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "middle";
+    ctx.fillText(quantity, thisX + iconWidth + iconMarginRight, thisY + iconHeight/2);
+
+  });
+
+}
+
+function renderPurchasingUnit() {
+
+  const { shopItems, units, playerId, territory, gridDimensions } = renderingState;
+  const { buyingUnit, quantityBar } = getInternalState();
+  
+  if (!buyingUnit || !quantityBar) return;
+
+  let quantity = getQuantityBarAmount();
+
+  let tileX = tileMouseX();
+  let tileY = tileMouseY();
+
+  if (!inBounds(tileX, tileY, gridDimensions.width, gridDimensions.height)) return false;
+
+  let canBuy = getMe().gold >= shopItems.find(item => item.type == "unit").cost.gold;
+
+  if (mouseClicked) {
+    registerClick(() => {
+  
+      if (territory[tileY][tileX] !== playerId) {
+
+        displayError("You can only purchase units in your territory.");
+
+        return;
+
+      }
+
+      emit(Constants.messages.buyFromShop, {
+        itemId: shopItems.find(item => item.type == "unit").id,
+        quantity: quantity,
+        x: tileX,
+        y: tileY
+      });
+  
+    });
+  }
+  
+  ctx.globalAlpha = 0.3;
+  ctx.fillStyle = "green";
+
+  if (territory[tileY][tileX] !== playerId || !canBuy) ctx.fillStyle = "red";
+
+  ctx.fillRect(tileX * RenderConstants.CELL_WIDTH, tileY * RenderConstants.CELL_HEIGHT, RenderConstants.CELL_WIDTH, RenderConstants.CELL_HEIGHT);
+  ctx.globalAlpha = 1;
+
+  let unitAtPos = units.find(unit => unit.playerId == playerId && unit.x == tileX && unit.y == tileY);
+
+  let renderQuantity = quantity;
+
+  if (!canBuy) {
+    renderQuantity = 0;
+  }
+
+  if (unitAtPos) renderQuantity += unitAtPos.quantity;
+
+  let rect = renderSoldier(tileX, tileY, renderQuantity, true);
+
+  ctx.globalAlpha = 0.9;
+  renderCost(getQuantityBarPurchaseCost(shopItems), rect.x + rect.width/2, rect.y + rect.height * 0.7);
+  ctx.globalAlpha = 1;
+
+  rect.width *= 0.5;
+
+  if (mouseInRect(rect)) {
+
+    registerScrollableSurface((dy) => {
+      mutateInternalState(state => {
+        let newVal = state.quantityBar.percentage - dy * 0.003;
+
+        if (newVal > 1) newVal = 1;
+        if (newVal < 0) newVal = 0;
+
+        state.quantityBar.percentage = newVal;
+      });
+    });
+
+  }
+
+}
+
+function renderPurchasingCity() {
+
+  const { land, shopItems, cities, units, playerId, territory, gridDimensions } = renderingState;
+  const { buyingCity } = getInternalState();
+  
+  if (!buyingCity) return;
+
+  let tileX = tileMouseX();
+  let tileY = tileMouseY();
+
+  if (!inBounds(tileX, tileY, gridDimensions.width, gridDimensions.height)) return;
+
+  let itemBuying = shopItems.find(item => item.type == "city");
+
+  let canBuy = canBuyResource(itemBuying.cost, getResources());
+
+  let unitAtPos = units.find(unit => unit.playerId == playerId && unit.x == tileX && unit.y == tileY);
+  if (unitAtPos && unitAtPos.fighting) canBuy = false;
+
+  let isIsolated = isIsolatedPosition({x: tileX, y: tileY}, cities.map(city => ({x: city.x, y: city.y})));
+  if (!isIsolated) canBuy = false;
+  
+  if (territory[tileY][tileX] !== playerId) canBuy = false;
+
+  const { allowed } = resolveTerritoryBlacklist(itemBuying.blacklist, land[tileY][tileX]);
+  if (!allowed) canBuy = false;
+
+  if (mouseClicked) {
+    registerClick(() => {
+
+      emit(Constants.messages.buyFromShop, {
+        itemId: itemBuying.id,
+        x: tileX,
+        y: tileY
+      });
+
+      mutateInternalState(state => {
+        state.buyingCity = null;
+      });
+  
+    });
+  }
+  
+  ctx.globalAlpha = 0.3;
+  ctx.fillStyle = "green";
+
+  if (!canBuy) ctx.fillStyle = "red";
+
+  ctx.fillRect(tileX * RenderConstants.CELL_WIDTH, tileY * RenderConstants.CELL_HEIGHT, RenderConstants.CELL_WIDTH, RenderConstants.CELL_HEIGHT);
+  ctx.globalAlpha = 1;
+
+  let asset = getAsset("city");
+
+  let rect = drawBuilding(asset, tileX, tileY);
+
+  ctx.globalAlpha = 0.9;
+  renderCost(itemBuying.cost, rect.x + rect.width/2, rect.y + rect.height * 0.7);
+  ctx.globalAlpha = 1;
+
+}
+
+function renderPurchasingBuilding() {
+
+  const { land, shopItems, buildings, cities, units, playerId, territory, gridDimensions } = renderingState;
+  const { buyingBuilding } = getInternalState();
+  
+  if (!buyingBuilding) return;
+
+  let tileX = tileMouseX();
+  let tileY = tileMouseY();
+
+  if (!inBounds(tileX, tileY, gridDimensions.width, gridDimensions.height)) return false;
+
+  let itemBuying = shopItems.find(item => item.id == buyingBuilding);
+
+  let canBuy = canBuyResource(itemBuying.cost, getResources());
+
+  let unitAtPos = units.find(unit => unit.playerId == playerId && unit.x == tileX && unit.y == tileY);
+  if (unitAtPos && unitAtPos.fighting) canBuy = false;
+
+  let buildingAtPos = buildings.find(building => building.x == tileX && building.y == tileY);
+  if (buildingAtPos) canBuy = false;
+  
+  if (territory[tileY][tileX] !== playerId) canBuy = false;
+
+  let auras = getAuraPositions(cities.map(city => ({ x: city.x, y: city.y })));
+  if (!positionInPositionList({ x: tileX, y: tileY }, auras)) canBuy = false;
+
+  const { allowed, efficiency } = resolveTerritoryBlacklist(itemBuying.blacklist, land[tileY][tileX]);
+  if (!allowed) canBuy = false;
+
+  if (mouseClicked) {
+    registerClick(() => {
+  
+      if (territory[tileY][tileX] !== playerId) {
+
+        displayError("You can only place buildings in your territory.");
+
+        return;
+
+      }
+
+      emit(Constants.messages.buyFromShop, {
+        itemId: itemBuying.id,
+        x: tileX,
+        y: tileY
+      });
+
+      mutateInternalState(state => {
+        state.buyingBuilding = null;
+      });
+  
+    });
+  }
+  
+  ctx.globalAlpha = 0.3;
+  ctx.fillStyle = "green";
+
+  if (!canBuy) ctx.fillStyle = "red";
+
+  ctx.fillRect(tileX * RenderConstants.CELL_WIDTH, tileY * RenderConstants.CELL_HEIGHT, RenderConstants.CELL_WIDTH, RenderConstants.CELL_HEIGHT);
+  ctx.globalAlpha = 1;
+
+  let asset = getAsset(itemBuying.image.split(".")[0]);
+
+  let rect = drawBuilding(asset, tileX, tileY);
+
+  ctx.globalAlpha = 0.9;
+  renderCost(itemBuying.cost, rect.x + rect.width/2, rect.y + rect.height * 0.7);
+  ctx.globalAlpha = 1;
+
+  if (efficiency) {
+
+    let showEfficiency = Math.floor(efficiency * 100);
+    let message;
+    if (showEfficiency > 100) {
+      showEfficiency -= 100;
+      showEfficiency = `+${showEfficiency}%`;
+      message = "higher rates";
+      ctx.fillStyle = "#005c15";
+    } else if (showEfficiency < 100) {
+      showEfficiency = 100 - showEfficiency;
+      showEfficiency = `-${showEfficiency}%`;
+      message = "lower rates";
+      ctx.fillStyle = "#5c0000";
+    }
+
+    message = `${itemBuying.name}s yield ${showEfficiency} ${message} in ${land[tileY][tileX]} tiles`;
+    
+    let fontSize = 4;
+    ctx.fontSize = fontSize;
+    let textWidth = ctx.measureText(message).width;
+    
+    let innerMargin = 3;
+    let innerPadding = 3;
+    let marginBottom = 6;
+
+    let boxWidth = 15;
+
+    let totalWidth = boxWidth + innerMargin + innerPadding*2 + textWidth;
+    let totalHeight = innerPadding * 2 + fontSize;
+    let totalY = rect.y - marginBottom - totalHeight;
+
+    let boxX = rect.x + rect.width/2 - totalWidth/2;
+    ctx.fillRect(boxX, totalY, boxWidth, totalHeight);
+
+    ctx.fillStyle = "#404040";
+    ctx.fillRect(boxX + boxWidth + innerMargin, totalY, innerPadding*2 + textWidth, totalHeight);
+
+    ctx.textBaseline = "middle";
+    ctx.textAlign = "center";
+    ctx.fillStyle = "white";
+    ctx.fillText(message, boxX + boxWidth + innerMargin + innerPadding + textWidth/2, totalY + innerPadding + fontSize/2);
+
+    ctx.fontSize = 5;
+    ctx.fillText(showEfficiency, boxX + boxWidth/2, totalY + totalHeight/2);
+
+  }
+
+}
+
+function drawBuilding(asset, x, y) {
+
+  ctx.drawImage(asset, x * RenderConstants.CELL_WIDTH + RenderConstants.BUILDING_PADDING, y * RenderConstants.CELL_HEIGHT + RenderConstants.BUILDING_PADDING, RenderConstants.CELL_WIDTH - RenderConstants.BUILDING_PADDING*2, RenderConstants.CELL_HEIGHT - RenderConstants.BUILDING_PADDING*2);
+
+  return {
+    x: x * RenderConstants.CELL_WIDTH + RenderConstants.BUILDING_PADDING,
+    y: y * RenderConstants.CELL_HEIGHT + RenderConstants.BUILDING_PADDING,
+    width: RenderConstants.CELL_WIDTH - RenderConstants.BUILDING_PADDING*2,
+    height: RenderConstants.CELL_HEIGHT - RenderConstants.BUILDING_PADDING*2
+  };
+
+}
+
+function getBuildingAtPosition(x, y) {
+
+  const { buildings } = renderingState;
+
+  return buildings.find(building => building.x == x && building.y == y);
+
+}
+
 function renderCities() {
+
+  const { territory, playerId, gridDimensions } = renderingState;
 
   renderingState.cities.forEach(city => {
 
-    let { x, y, population, id } = city;
+    let { x, y, population, turnsLeft, id } = city;
 
-    ctx.fillStyle = "#888888";
-    ctx.fillRect(x * RenderConstants.CELL_WIDTH + RenderConstants.BUILDING_PADDING, y * RenderConstants.CELL_HEIGHT + RenderConstants.BUILDING_PADDING, RenderConstants.CELL_WIDTH - RenderConstants.BUILDING_PADDING*2, RenderConstants.CELL_HEIGHT - RenderConstants.BUILDING_PADDING*2);
+    drawBuilding(getAsset("city"), x, y);
+
+    if (territory[y][x] !== playerId) return;
+
+    let ringPositions = getRingPositions({ x, y }).filter(pos => inBounds(pos.x, pos.y, gridDimensions.width, gridDimensions.height)).filter(pos => territory[pos.y][pos.x] == playerId);
+    let farms = ringPositions.filter(pos => {
+      let b = getBuildingAtPosition(pos.x, pos.y);
+      return b && b.type.name == "Farm";
+    });
+
+    let turnSpeed = 2 ** farms.length;
+
+    ctx.fontSize = 8;
+    ctx.textBaseline = "middle";
+    ctx.textAlign = "center";
+    ctx.fillStyle = "black";
+    ctx.fillCircle(x * RenderConstants.CELL_WIDTH + RenderConstants.CELL_WIDTH/2 - 24, (y+1) * RenderConstants.CELL_HEIGHT - 7, 7)
+
+    ctx.fillStyle = "white";
+    ctx.fillText(population, x * RenderConstants.CELL_WIDTH + RenderConstants.CELL_WIDTH/2 - 24, (y+1) * RenderConstants.CELL_HEIGHT - 7);
+
+    let turnsLeftEstimate = Math.ceil(turnsLeft / turnSpeed);
+    ctx.textAlign = "left";
+    ctx.fillStyle = "black";
+    ctx.fontSize = 6;
+    ctx.fillText(turnsLeftEstimate + " days until growth", x * RenderConstants.CELL_WIDTH + RenderConstants.CELL_WIDTH/2 - 15, (y+1) * RenderConstants.CELL_HEIGHT - 7)
 
   });
 
@@ -175,6 +570,8 @@ function renderVagrantUnits() {
       handleMouseOverUnit(vagrantUnit, rect);
   
     }
+
+    renderPossibleQuantityChange(vagrantUnit, rect.x + rect.width, rect.y - rect.height * 0.5, cPos===1);
 
   });
 
@@ -337,6 +734,8 @@ function registerMapSurface() {
 
 function computeQuantityBar() {
 
+  const { shopItems } = renderingState;
+
   mutateInternalState(internalState => {
 
     let previousConfig = internalState.quantityBar;
@@ -344,7 +743,38 @@ function computeQuantityBar() {
 
     internalState.quantityBar = null;
 
+    if (internalState.buyingUnit) {
+
+      if (previousConfig && previousConfig.id != 0) previousPercentage = null;
+
+      let percentage = previousPercentage;
+      if (!percentage) {
+        percentage = internalState.savedQuantityPercentages.buying;
+      }
+      internalState.savedQuantityPercentages.buying = percentage;
+
+      internalState.quantityBar = {
+        id: 0,
+        percentage: percentage,
+        max: getMaxUnitPurchase(shopItems),
+        units: "units",
+        color: "#adad47",
+        tip: () => {
+          let quantity = getQuantityBarAmount();
+          return [
+            `BUYING UNITS`,
+            `Units to buy: ${quantity}`,
+            `Cost: ${getQuantityBarPurchaseCost(shopItems).gold}`,
+            `Click on tile to buy`
+          ]
+        }
+      };
+
+    }
+
     if (internalState.selectedUnit || internalState.draggingUnit) {
+
+      if (previousConfig && previousConfig.id != 1) previousPercentage = null;
 
       const unit = getUnitById(internalState.selectedUnit);
 
@@ -355,9 +785,11 @@ function computeQuantityBar() {
       internalState.savedQuantityPercentages.unit = percentage;
 
       internalState.quantityBar = {
+        id: 1,
         percentage: percentage,
         max: unit.quantity,
         units: "units",
+        color: "#70AD47",
         tip: () => {
           let quantity = getQuantityBarAmount();
           return [
@@ -380,7 +812,7 @@ function drawQuantityBar() {
   if (!getInternalState().quantityBar) return;
 
   const { quantityBar } = getInternalState();
-  const { percentage, max } = quantityBar;
+  const { percentage, max, color } = quantityBar;
   const tip = quantityBar.tip();
 
   const marginRight = 75;
@@ -413,7 +845,7 @@ function drawQuantityBar() {
       newFillPercent = Math.floor(newFillPercent * 100) / 100;
 
       if (newFillPercent > 1) newFillPercent = 1;
-      if (newFillPercent < 0) newFillPercent = 0;
+      if (newFillPercent < 0) newFillPercent = 0.001;
 
       mutateInternalState(state => {
         state.quantityBar.percentage = newFillPercent;
@@ -426,10 +858,10 @@ function drawQuantityBar() {
     registerScrollableSurface(dy => {
 
       mutateInternalState(state => {
-        let newVal = state.quantityBar.percentage + dy * 0.003;
+        let newVal = state.quantityBar.percentage - dy * 0.003;
 
         if (newVal > 1) newVal = 1;
-        if (newVal < 0) newVal = 0;
+        if (newVal < 0) newVal = 0.001;
 
         state.quantityBar.percentage = newVal;
       });
@@ -440,7 +872,7 @@ function drawQuantityBar() {
   const filledHeight = barHeight * percentage;
 
   // green bar
-  ctx.fillStyle = "#70AD47";
+  ctx.fillStyle = color;
   ctx.abs.fillRect(canvas.width - marginRight - barWidth, marginTop + (barHeight - filledHeight), barWidth, filledHeight)
 
   // separating line
@@ -698,20 +1130,11 @@ function renderLand() {
 
   renderingState.land.forEach((row, y) => {
     row.forEach((cell, x) => {
-      if (cell == "water") {
-        ctx.fillStyle = "#4fb7ff";
-        if ((x + y) % 2 == 0) {
-          ctx.fillStyle = "#4fb7df";
-        }
-      }
-      else if (cell == "grass") {
-        ctx.fillStyle = "#7EC850";
-        if ((x + y) % 2 == 0) {
-          ctx.fillStyle = "#8ECF50";
-        }
-      }
 
-      ctx.fillRect(x * RenderConstants.CELL_WIDTH, y * RenderConstants.CELL_HEIGHT, RenderConstants.CELL_WIDTH, RenderConstants.CELL_HEIGHT);
+      let asset = getAsset(cell == "oil" ? "oilTile" : cell);
+
+      ctx.drawImage(asset, x * RenderConstants.CELL_WIDTH, y * RenderConstants.CELL_HEIGHT, RenderConstants.CELL_WIDTH, RenderConstants.CELL_HEIGHT);
+    
     });
   });
 
@@ -773,7 +1196,7 @@ function renderUnits() {
   const { selectedUnit, draggingUnit, quantityBar } = getInternalState();
 
   renderingState.units.forEach(unit => {
-    let { id, x, y, quantity, fighting } = unit;
+    let { id, x, y, quantity, fighting, lastQuantity, lastQuantityChange } = unit;
 
     let quantityToDisplay = quantity;
 
@@ -790,8 +1213,54 @@ function renderUnits() {
       handleMouseOverUnit(unit, rect)
   
     }
+
+    renderPossibleQuantityChange(unit, rect.x + rect.width, rect.y - rect.height * 0.5, fighting);
   
   });
+
+}
+
+function renderPossibleQuantityChange(unit, x, y, compact) {
+  const { quantity, lastQuantity, lastQuantityChange } = unit;
+
+  if (lastQuantityChange) {
+
+    let changeInUnits = quantity - lastQuantity;
+
+    let delta = Date.now() - lastQuantityChange;
+
+    let totalTime = 1 * 1000;
+
+    let progress = delta / totalTime;
+
+    if (progress > 1) progress = 1;
+
+    renderChangeNumber(changeInUnits, progress, x, y, compact);
+
+  }
+}
+
+function renderChangeNumber(change, progress, x, y, compact) {
+
+  ctx.globalAlpha = 1 - progress;
+  let sign = change >= 0 ? "+" : "";
+  if (change < 0) {
+    ctx.fillStyle = "#540101";
+  } else {
+    ctx.fillStyle = "#015416";
+  }
+
+  let yChange = RenderConstants.CELL_HEIGHT * 0.5;
+
+  ctx.fontSize = compact ? 7 : 20;
+
+  ctx.fillCircle(x, y - decayingQuantity(yChange, progress) + yChange, compact ? 6 : 20);
+  
+  ctx.fillStyle = "white";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(sign + change, x, y - decayingQuantity(yChange, progress) + yChange);
+  ctx.globalAlpha = 1;
 
 }
 
@@ -967,6 +1436,9 @@ function handleMouseOverUnit(unit, rect) {
     if (first) {
       registerNextMouseUpHandler(() => {
         mutateInternalState(state => {
+
+          if (!state.draggingUnit) return;
+
           const { x: toX, y: toY } = getHoveringTileCoords();
 
           if (canUnitMoveTo(unit, toX, toY)) {
@@ -1013,7 +1485,7 @@ function handleMouseOverUnit(unit, rect) {
   if (selectedUnit) {
     registerScrollableSurface((dy) => {
       mutateInternalState(state => {
-        let newVal = state.quantityBar.percentage + dy * 0.003;
+        let newVal = state.quantityBar.percentage - dy * 0.003;
 
         if (newVal > 1) newVal = 1;
         if (newVal < 0) newVal = 0;

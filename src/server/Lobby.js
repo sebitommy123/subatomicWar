@@ -12,18 +12,20 @@ class Lobby {
     this.open = true;
 
     this.config = {
-      gridDimensions: {
+      gridDimensions: { // size of the playing area in tiles
         width: 15,
         height: 15
       },
-      waitTime: 15,
-      dayLength: 10 * 1000,
-      startingGold: 0,
-      goldPerDay: 5,
-      vagrantMoveTime: 3000,
-      fightTime: 1000,
-      fightSpeed: 2000,
-      fightInitialDelay: 1000,
+      waitTime: 15, // time for players to choose starting positions
+      dayLength: 10 * 1000, // length of a day in milliseconds
+      startingResources: { gold: 20, wood: 20, oil: 20 }, // starting resources
+      resourcesPerDay: { gold: 5, wood: 5, oil: 0 }, // gold per day naturally
+      vagrantMoveTime: 3000, // time required for unit to move from tile to tile
+      fightTime: 1000, // i have no idea??????????
+      fightSpeed: 2000, // ms in between fighting turns
+      fightInitialDelay: 1000, //time to wait before starting fight
+      startingTroops: 10, //starting troops at starting location
+      baseCityGrowth: 8, //turns required for city growth
     };
 
   }

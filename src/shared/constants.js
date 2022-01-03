@@ -9,6 +9,7 @@ module.exports = Object.freeze({
     error: "errorMessage",
     moveUnits: "moveUnits",
     retreat: "retreat",
+    buyFromShop: "buyFromShop",
   },
   initialState: {
     screen: "connectingMenu",

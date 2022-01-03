@@ -1,4 +1,5 @@
-import { canvas, ctx } from "./render";
+import { canvas, ctx, RenderConstants } from "./render";
+import { mutateInternalState } from "./state";
 
 export let dragging = false;
 let dragLastPosition = null;
@@ -25,6 +26,30 @@ export function addUserInputHandlers() {
 
   canvas.addEventListener('wheel', handleWheel);
 
+  window.addEventListener("keydown", handleKeyDown);
+
+}
+
+function handleKeyDown(evt) {
+
+  let { key } = evt;
+
+  if (key == "Escape") {
+    stopAllPlacing();
+  }
+
+}
+
+export function stopAllPlacing() {
+  mutateInternalState(state => {
+    state.draggingUnit = null;
+    state.buyingUnit = null;
+    state.selectedUnit = null;
+    state.buyingBuilding = null;
+    state.buyingCity = false;
+
+    forceStopDrag();
+  });
 }
 
 function handleMouseDown(evt) {
@@ -62,7 +87,14 @@ function handleMouseMove(evt) {
   gameMouseY = ctx.canvasCoordsToGameY(mouseY);
 }
 
-function handleMouseUp(evt) {
+function forceStopDrag() {
+
+  dragging = false;
+  realDrag = false;
+
+}
+
+function handleMouseUp() {
   if (!realDrag) {
     mouseClicked = true;
   }
@@ -78,11 +110,16 @@ function handleMouseUp(evt) {
 
 function handleWheel(evt) {
 
-  console.log(evt);
-
   evt.preventDefault();
 
-  scrollHandler(evt.deltaY);
+  let dy = evt.deltaY;
+
+  let decdy = dy - parseInt(dy);
+
+  if (dy > 100) dy /= 2;
+  if (decdy.toString().length > 5) dy *= 5;
+
+  scrollHandler(dy);
 
 }
 
@@ -137,4 +174,12 @@ export function tickEnd() {
   }
   
   mouseClicked = false;
+}
+
+export function tileMouseX() {
+  return Math.floor(gameMouseX / RenderConstants.CELL_WIDTH);
+}
+
+export function tileMouseY() {
+  return Math.floor(gameMouseY / RenderConstants.CELL_WIDTH);
 }

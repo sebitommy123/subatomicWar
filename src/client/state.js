@@ -9,9 +9,13 @@ let internalState = {
   quantityBar: null,
   savedQuantityPercentages: {
     unit: 0.5,
+    buying: 0.5,
   },
   selectedUnit: null,
-  draggingUnit: null
+  draggingUnit: null,
+  buyingUnit: false,
+  buyingCity: false,
+  buyingBuilding: null
 };
 let me;
 

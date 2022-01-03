@@ -40,6 +40,11 @@ export default class BetterCtx {
     return y * this.zoom + this.offsetY;
   }
 
+  measureText(text) {
+    let res = this.ctx.measureText(text);
+    return { width: res.width / this.zoom };
+  }
+
   fillRect(x, y, width, height) {
     if (typeof x == "object") {
       y = x.y;

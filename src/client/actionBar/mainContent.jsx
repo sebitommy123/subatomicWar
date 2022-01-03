@@ -1,43 +1,73 @@
 import React from 'react'
+import { mutateInternalState } from '../state';
+import { stopAllPlacing } from '../userInput';
 import styles from './mainContent.module.css';
 
-function Item() {
+function Item({ id, name, imageSrc, cost, type, description }) {
+
+  let resourceTypes = {
+    gold: "./assets/gold.png",
+    wood: "./assets/wood.png",
+  }
+
+  function handleClick() {
+
+    mutateInternalState(state => {
+      if (type == "unit") {
+        stopAllPlacing();
+        state.buyingUnit = true;
+      } else if (type == "building") {
+        stopAllPlacing();
+        state.buyingBuilding = id;
+      } else if (type == "city") {
+        stopAllPlacing();
+        state.buyingCity = true;
+      }
+    });
+
+  }
+
+  function handleDragStart(event) {
+
+    event.preventDefault();
+
+    handleClick();
+
+  }
 
   return (
-    <div className={styles.item}>
+    <div className={styles.item} onClick={handleClick} onDragStart={handleDragStart}>
       <div className={styles.itemHeader}>
-        Soldier
+        <div className={styles.title}>{name}</div>
+        <div className={styles.description}>{description}</div>
       </div>
       <div className={styles.itemImageWrapper}>
-        <img src="./assets/soldier.png" className={styles.itemImage}></img>
+        <img src={imageSrc} className={styles.itemImage}></img>
       </div>
       <div className={styles.itemCost}>
-        <div className={styles.itemCostType}>
-          <img src="./assets/gold.png" className={styles.icon}></img>
-          <div className={styles.label}>5</div>
-        </div>
-        <div className={styles.itemCostType}>
-          <img src="./assets/wood.png" className={styles.icon}></img>
-          <div className={styles.label}>5</div>
-        </div>
+        {
+          Object.keys(cost).map(type => {
+            let amount = cost[type];
+            return (
+              <div key={type} className={styles.itemCostType}>
+                <img src={resourceTypes[type]} className={styles.icon}></img>
+                <div className={styles.label}>{amount}</div>
+              </div>
+            )
+          })
+        }
       </div>
     </div>
   )
 
 }
 
-function MainContent() {
+function MainContent({shopItems}) {
   return (
     <div className={styles.mainContent}>
-      <Item />
-      <Item />
-      <Item />
-      <Item />
-      <Item />
-      <Item />
-      <Item />
-      <Item />
-      <Item />
+      {shopItems.map(item =>  {
+        return <Item key={item.id} id={item.id} name={item.name} type={item.type} description={item.desc} imageSrc={"./assets/" + item.image} cost={item.cost}/>
+      })}
     </div>
   )
 }

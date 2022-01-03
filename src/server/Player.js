@@ -2,15 +2,35 @@ const { nanoid } = require('nanoid');
 
 class Player {
 
-  constructor(game, socket, color, gold) {
+  constructor(game, socket, color, startingResources) {
     this.id = nanoid();
     this.socket = socket;
     this.game = game;
 
-    this.gold = gold;
+    this.gold = startingResources.gold;
+    this.oil = startingResources.oil;
+    this.wood = startingResources.wood;
     this.color = color;
 
     this.startingPos = null;
+  }
+
+  canAfford(cost) {
+    const { gold, oil, wood } = cost;
+
+    if (gold && gold > this.gold) return false;
+    if (oil && oil > this.oil) return false;
+    if (wood && wood > this.wood) return false;
+
+    return true;
+  }
+
+  pay(cost) {
+    const { gold, oil, wood } = cost;
+
+    if (gold) this.gold -= gold;
+    if (oil) this.oil -= oil;
+    if (wood) this.wood -= wood;
   }
 
   isEnemyTile(x, y) {
@@ -40,6 +60,8 @@ class Player {
     return {
       ...this.toClient(),
       gold: this.gold,
+      oil: this.oil,
+      wood: this.wood,
     };
   }
 
