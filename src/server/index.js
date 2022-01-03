@@ -3,7 +3,7 @@ const Constants = require("../shared/constants.js");
 const { Lobby, makeLobbiesGlobal, getLobbyById } = require("./Lobby.js");
 const { Game, makeGamesGlobal, startGameFromLobby } = require("./Game.js");
 const { htmlentities } = require("./utils.js");
-const Server = require("./server.js");
+const Server = require("./Server.js");
 
 
 const lobbies = makeLobbiesGlobal([]);
