@@ -359,6 +359,7 @@ class Game {
 
       let baseObj = {
         screen: "game",
+        serverTime: Date.now(),
         name: player.name,
         playerId: player.id,
         stage: this.stage,

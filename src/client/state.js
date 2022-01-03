@@ -19,6 +19,9 @@ let internalState = {
 };
 let me;
 
+const originalDateFunction = Date.now;
+let serverTimeError = 0;
+
 export function mutateInternalState(mutFunc) {
   mutFunc(internalState);
 
@@ -31,6 +34,15 @@ export function getInternalState() {
 
 export function handleNewState(newState) {
   console.log("New state:", newState);
+
+  if (newState) {
+    if (newState.serverTime) {
+      serverTimeError = newState.serverTime - originalDateFunction();
+      Date.now = () => {
+        return serverTimeError + originalDateFunction();
+      };
+    }
+  }
 
   state = newState;
 
