@@ -1517,7 +1517,7 @@ function getUnitById(unitId) {
   const { units, vagrantUnits } = renderingState;
 
   let unit = getById(unitId, units);
-  if (unit) return p;
+  if (unit) return unit;
 
   return getById(unitId, vagrantUnits);
 }
