@@ -689,13 +689,15 @@ function renderingHoveringTile() {
 
 function canUnitMoveTo(unit, x, y) {
 
-  const { landTypes, land } = renderingState;
+  const { landTypes, land, gridDimensions } = renderingState;
 
   const { x: fromX, y: fromY } = unit;
 
   if (unit.vagrant) {
     return x == fromX && y == fromY;
   }
+
+  if (!inBounds(x, y, gridDimensions.width, gridDimensions.height)) return false;
 
   if(!isAdjescent({ x: fromX, y: fromY }, { x, y })) return false;
 
