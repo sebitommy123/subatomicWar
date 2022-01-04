@@ -149,7 +149,7 @@ class Unit {
     let multiplier = landTypes[this.landBelow()].combat[name];
     
     let building = this.buildingBelow();
-    if (building) multiplier *= building.type.combat[name];
+    if (building && building.type.combat[name]) multiplier *= building.type.combat[name];
     
     let city = this.cityBelow();
     if (city) multiplier *= this.game.shop.items.find(i => i.type === "city").combat[name];
