@@ -503,10 +503,10 @@ function renderCities() {
     let ringPositions = getRingPositions({ x, y }).filter(pos => inBounds(pos.x, pos.y, gridDimensions.width, gridDimensions.height)).filter(pos => territory[pos.y][pos.x] == playerId);
     let farms = ringPositions.filter(pos => {
       let b = getBuildingAtPosition(pos.x, pos.y);
-      return b && b.type.name == "Farm";
+      return b && territory[pos.y][pos.x] == playerId && b.type.name == "Farm";
     });
 
-    let turnSpeed = 2 ** farms.length;
+    let turnSpeed = 4 ** farms.length;
 
     ctx.fontSize = 8;
     ctx.textBaseline = "middle";

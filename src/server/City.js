@@ -54,7 +54,7 @@ class City {
 
     if (this.population < 8) {
 
-      let skipTurns = 2 ** this.foodThisTick; // even with 0, that's 1 per turn, natural growth of 1 turn per turn
+      let skipTurns = 4 ** this.foodThisTick; // even with 0, that's 1 per turn, natural growth of 1 turn per turn
 
       this.turnsLeft -= skipTurns;
 
