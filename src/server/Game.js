@@ -5,7 +5,7 @@ const { City } = require("./City");
 const { updateStates } = require("./SocketWrapper");
 
 const { generateEmptyTerritory, getEmptyPositions } = require("./territory");
-const { generateRandomLand } = require("./land");
+const { generateRandomLand, landTypes } = require("./land");
 const Constants = require("../shared/constants");
 const Joi = require("joi");
 const { colors, pickRandom } = require("./utils");
@@ -236,6 +236,8 @@ class Game {
 
     if(!isAdjescent(from, to)) return;
 
+    if (!landTypes[this.land[to.y][to.x]].canWalk) return;
+
     let leftOver = fromUnit.quantity - quantity;
     if (leftOver < 0) return;
 
@@ -371,6 +373,7 @@ class Game {
         land: this.land,
         cities: this.cities.map(c => c.toClient()),
         buildings: this.buildings.map(b => b.toClient()),
+        landTypes: landTypes,
       };
   
       if (this.stage === "pregame") {

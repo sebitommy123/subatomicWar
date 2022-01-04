@@ -31,6 +31,10 @@ class Player {
     if (gold) this.gold -= gold;
     if (oil) this.oil -= oil;
     if (wood) this.wood -= wood;
+
+    this.gold = Math.ceil(this.gold);
+    this.oil = Math.ceil(this.oil);
+    this.wood = Math.ceil(this.wood);
   }
 
   isEnemyTile(x, y) {

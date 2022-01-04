@@ -28,6 +28,8 @@ function handleSocketConnection(socket) {
   lobby.addSocket(socket);
 
   lobby.config.waitTime = 2;
+  lobby.config.startingResources = {gold: 1000, wood: 1000, oil: 1000};
+  lobby.config.resourcesPerDay = {gold: 0, wood: 0, oil: 0};
 
   startGameFromLobby(lobby);
 

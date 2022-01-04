@@ -3,6 +3,39 @@
 
 const { getAdjescentPositions } = require("../shared/utils");
 
+const landTypes = {
+  plains: {
+    name: "Plains",
+    combat: { attack: 1, defense: 1 },
+    canWalk: true,
+  },
+  forest: {
+    name: "Forest",
+    combat: { attack: 1, defense: 1 },
+    canWalk: true,
+  },
+  water: {
+    name: "Water",
+    combat: { attack: 1, defense: 1 },
+    canWalk: false,
+  },
+  oil: {
+    name: "Oil",
+    combat: { attack: 1, defense: 1 },
+    canWalk: true,
+  },
+  desert: {
+    name: "Desert",
+    combat: { attack: 1, defense: 1 },
+    canWalk: true,
+  },
+  mountains: {
+    name: "Mountains",
+    combat: { attack: 1, defense: 2 },
+    canWalk: true,
+  },
+}
+
 function generateRandomLand(width, height) {
 
   let land = [];
@@ -87,5 +120,6 @@ function generateRandomLand(width, height) {
 }
 
 module.exports = {
-  generateRandomLand
+  generateRandomLand,
+  landTypes
 }

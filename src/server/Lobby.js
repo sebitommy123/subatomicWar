@@ -16,7 +16,7 @@ class Lobby {
         width: 15,
         height: 15
       },
-      waitTime: 15, // time for players to choose starting positions
+      waitTime: 5, // time for players to choose starting positions
       dayLength: 10 * 1000, // length of a day in milliseconds
       startingResources: { gold: 0, wood: 0, oil: 0 }, // starting resources
       resourcesPerDay: { gold: 10, wood: 5, oil: 0 }, // resources per day naturally
@@ -24,8 +24,9 @@ class Lobby {
       fightTime: 1000, // i have no idea??????????
       fightSpeed: 2000, // ms in between fighting turns
       fightInitialDelay: 1000, //time to wait before starting fight
-      startingTroops: 10, //starting troops at starting location
+      startingTroops: 100, //starting troops at starting location
       baseCityGrowth: 8, //turns required for city growth
+      damageMultiplier: 0.1, //damage dealt = quantity * damageMultiplier
     };
 
   }

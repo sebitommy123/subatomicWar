@@ -53,18 +53,13 @@ class Building {
     let p = this.getPlayer();
 
     if (p && this.isActive()) {
-      if (this.type.name === "Gold mine") {
-        p.gold += Math.ceil(5 * this.getLandEfficiency());
-      }
-      if (this.type.name === "Lumber mill") {
-        p.wood += Math.ceil(5 * this.getLandEfficiency());
-      }
-      if (this.type.name === "Oil rig") {
-        p.oil += Math.ceil(5 * this.getLandEfficiency());
-      }
-      if (this.type.name === "Farm") {
-        this.getCity().foodThisTick += 1;
-      }
+
+      let resourceYield = this.game.shop.multiplyCost(this.type.resourceYield, -this.getLandEfficiency());
+
+      p.pay(resourceYield);
+
+      this.getCity().foodThisTick += this.type.food;
+
     }
 
   }

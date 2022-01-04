@@ -689,6 +689,8 @@ function renderingHoveringTile() {
 
 function canUnitMoveTo(unit, x, y) {
 
+  const { landTypes, land } = renderingState;
+
   const { x: fromX, y: fromY } = unit;
 
   if (unit.vagrant) {
@@ -700,6 +702,8 @@ function canUnitMoveTo(unit, x, y) {
   if (unit.engagedUnits.map(engagedUnitId => getUnitById(engagedUnitId)).some(engagedUnit => engagedUnit.x === x && engagedUnit.y === y)) {
     return false;
   }
+
+  if (!landTypes[land[y][x]].canWalk) return false;
 
   return true;
 

@@ -169,6 +169,9 @@ class Shop {
       cost: { gold: 3 },
       image: "soldier.png",
       type: "unit",
+      resourceYield: {},
+      food: 0,
+      combat: {},
       blacklist: {
         water: { allowed: false }
       },
@@ -180,6 +183,9 @@ class Shop {
       cost: { wood: 100 },
       image: "mine.png",
       type: "building",
+      resourceYield: { gold: 5 },
+      food: 0,
+      combat: {},
       blacklist: {
         water: { allowed: false },
         desert: { allowed: true, efficiency: 0.5 },
@@ -196,6 +202,9 @@ class Shop {
       cost: { wood: 80 },
       image: "lumbermill.png",
       type: "building",
+      resourceYield: { wood: 5 },
+      food: 0,
+      combat: {},
       blacklist: {
         water: { allowed: false },
         desert: { allowed: false },
@@ -212,6 +221,9 @@ class Shop {
       cost: { wood: 140 },
       image: "farm.png",
       type: "building",
+      resourceYield: {},
+      food: 1,
+      combat: {},
       blacklist: {
         water: { allowed: false },
         desert: { allowed: false },
@@ -228,6 +240,9 @@ class Shop {
       cost: { wood: 200 },
       image: "oilRig.png",
       type: "building",
+      resourceYield: { oil: 5 },
+      food: 0,
+      combat: {},
       blacklist: {
         water: { allowed: false },
         desert: { allowed: false },
@@ -244,6 +259,9 @@ class Shop {
       cost: { wood: 50, gold: 200 },
       image: "city.png",
       type: "city",
+      resourceYield: {},
+      food: 0,
+      combat: { attack: 1.5, defense: 1.5 },
       blacklist: {
         water: { allowed: false },
         oil: { allowed: false },
@@ -254,11 +272,11 @@ class Shop {
 
   addItem(item) {
 
-    const { name, cost, image, type, desc, blacklist } = item;
+    const { name, cost, image, type, desc, blacklist, resourceYield, food, combat } = item;
 
     this.items.push({
       id: nanoid(),
-      name, cost, image, type, desc, blacklist
+      name, cost, image, type, desc, blacklist, resourceYield, food, combat
     });
 
   }

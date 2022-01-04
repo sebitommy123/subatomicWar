@@ -1,4 +1,5 @@
 const { nanoid } = require('nanoid');
+const { landTypes } = require('./land');
 
 class Unit {
 
@@ -119,20 +120,86 @@ class Unit {
   }
 
   takeDamage(damage) {
-    this.setQuantityAnimating(Math.max(this.quantity - damage, 0));
+    if (damage == 0) return;
+
+    let realDamage = parseInt(damage);
+    let offsetDamage = damage - realDamage;
+
+    if (Math.random() < offsetDamage) {
+      realDamage++;
+    }
+
+    this.setQuantityAnimating(Math.max(this.quantity - realDamage, 0));
     if (this.quantity <= 0) this.remove();
   }
 
+  landBelow() {
+    return this.game.land[this.y][this.x];
+  }
+
+  buildingBelow() {
+    return this.game.getBuildingAtPosition(this.x, this.y);
+  }
+
+  cityBelow() {
+    return this.game.getCityAtPosition(this.x, this.y);
+  }
+
+  getMultiplier(name) {
+    let multiplier = landTypes[this.landBelow()].combat[name];
+    
+    let building = this.buildingBelow();
+    if (building) multiplier *= building.type.combat[name];
+    
+    let city = this.cityBelow();
+    if (city) multiplier *= this.game.shop.items.find(i => i.type === "city").combat[name];
+
+    return multiplier;
+  }
+
+  getDefenseMultiplier() {
+    return this.getMultiplier("defense");
+  }
+
+  getAttackMultiplier() {
+    return this.getMultiplier("attack");
+  }
+
   evolveFight() {
-
+    
+    let outgoingMultiplier = this.game.config.damageMultiplier * this.getDefenseMultiplier();
+    
     [...this.engagedUnits].forEach(enemy => {
-
+      
       if (!this.fighting) return; // stop if dead
 
-      let damage = Math.max(1, Math.min(Math.abs(this.quantity - enemy.quantity), this.quantity, enemy.quantity));
+      let total = enemy.quantity + this.quantity;
+      
+      let incomingMultiplier = this.game.config.damageMultiplier * enemy.getAttackMultiplier();
 
-      enemy.takeDamage(damage);
-      this.takeDamage(damage);
+      let outgoingDamage = total * outgoingMultiplier;
+
+      let incomingDamage = total * incomingMultiplier;
+
+      let extraFactor = 1;
+
+      if (outgoingDamage < 1) {
+        extraFactor = 1 / outgoingDamage;
+      }
+
+      if (incomingDamage * extraFactor < 1) {
+        extraFactor = 1 / incomingDamage;
+      }
+
+      if (outgoingDamage > enemy.quantity) {
+        extraFactor = enemy.quantity / outgoingDamage;
+      }
+      if (incomingDamage * extraFactor > this.quantity) {
+        extraFactor = this.quantity / incomingDamage;
+      }
+
+      enemy.takeDamage(outgoingDamage * extraFactor);
+      this.takeDamage(incomingDamage * extraFactor);
       
     });
 
