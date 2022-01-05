@@ -192,7 +192,63 @@ class Game {
         respond: (input) => this.handleOnUnitRetreat(player, input),
       });
 
+      player.socket.on({
+        message: Constants.messages.deleteStructure,
+        state: state => state.screen === "game" && state.stage === "game",
+        input: Joi.object({
+          structureId: Joi.string().required(),
+        }),
+        respond: (input) => this.handleOnStructureDelete(player, input),
+      });
+
+      player.socket.on({
+        message: Constants.messages.deleteBuilding,
+        state: state => state.screen === "game" && state.stage === "game",
+        input: Joi.object({
+          buildingId: Joi.string().required(),
+        }),
+        respond: (input) => this.handleOnBuildingDelete(player, input),
+      });
+
     });
+
+  }
+
+  handleOnStructureDelete(player, input) {
+
+    const structureId = input.structureId;
+
+    const structure = this.structures.find(s => s.id === structureId);
+
+    if (!structure) return;
+
+    if (structure.getPlayer().id !== player.id) {
+      player.socket.emitError("You don't own this structure.");
+      return;
+    }
+
+    structure.remove();
+
+    this.sendSyncUpdate();
+
+  }
+
+  handleOnBuildingDelete(player, input) {
+
+    const buildingId = input.buildingId;
+
+    const building = this.buildings.find(s => s.id === buildingId);
+
+    if (!building) return;
+
+    if (building.getPlayer().id !== player.id) {
+      player.socket.emitError("You don't own this building.");
+      return;
+    }
+
+    building.remove();
+
+    this.sendSyncUpdate();
 
   }
 

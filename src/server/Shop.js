@@ -224,7 +224,7 @@ class Shop {
         desert: { allowed: true, efficiency: 0.5 },
         plains: { allowed: true },
         forest: { allowed: true },
-        mountains: { allowed: true, efficiency: 2 },
+        mountains: { allowed: true, efficiency: 1.5 },
         oil: { allowed: false },
       },
       tags: [],
@@ -293,7 +293,7 @@ class Shop {
     this.addItem({
       name: "City",
       desc: "Settle a new city",
-      cost: { wood: 50, gold: 200 },
+      cost: { wood: 200, gold: 50 },
       image: "city.png",
       type: "city",
       resourceYield: {},

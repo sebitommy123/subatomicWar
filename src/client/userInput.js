@@ -48,6 +48,7 @@ export function stopAllPlacing() {
     state.buyingBuilding = null;
     state.buyingCity = false;
     state.buyingStructure = null;
+    state.deletingObject = null;
 
     forceStopDrag();
   });

@@ -5,7 +5,7 @@ import { getAsset } from './assets';
 import BetterCtx from './betterCtx';
 import { updateStageInfo } from './stageInfo';
 import { registerClick, mouseClicked, tickEnd, tickStart, registerDraggableSurface, mouseX, mouseY, registerNonDraggableSurface, registerScrollableSurface, registerNonScrollableSurface, registerNextMouseUpHandler, gameMouseY, gameMouseX, registerNextUnhandledClickHandler, tileMouseX, tileMouseY, stopAllPlacing } from './userInput';
-import { canBuyResource, decayingQuantity, displayError, getHoveringTileCoords, getMaxUnitPurchase, getQuantityBarAmount, getQuantityBarPurchaseCost, getResources, inBounds, mouseInLastRect, mouseInRect, pointInRect, sinusoidalTimeValue } from './utils';
+import { canBuyResource, decayingQuantity, displayError, getHoveringTileCoords, getMaxUnitPurchase, getQuantityBarAmount, getQuantityBarPurchaseCost, getResources, inBounds, mouseInLastCircle, mouseInLastRect, mouseInRect, pointInRect, sinusoidalTimeValue } from './utils';
 import { emit } from './networking';
 
 import Constants from '../shared/constants';
@@ -129,7 +129,9 @@ function render() {
 
 function renderBuildings() {
 
-  const { buildings } = renderingState;
+  const { buildings, playerId, territory } = renderingState;
+
+  const { deletingObject } = getInternalState();
 
   buildings.forEach(building => {
       
@@ -137,7 +139,41 @@ function renderBuildings() {
 
     let asset = getAsset(type.image.split('.')[0]);
 
-    drawBuilding(asset, x, y);
+    let rect = drawBuilding(asset, x, y);
+
+    if (playerId !== territory[y][x]) return;
+
+    if (mouseClicked && mouseInRect(rect)) {
+      registerClick(() => {
+        mutateInternalState(state => {
+          state.deletingObject = building.id;
+        })
+      });
+
+      registerNextUnhandledClickHandler(() => {
+        mutateInternalState(state => {
+          state.deletingObject = null;
+        })
+      });
+    }
+
+    if (deletingObject == building.id) {
+      ctx.fillStyle = "#ff0000";
+      ctx.fillCircle(rect.x + rect.width, rect.y, 8);
+      ctx.fontSize = 11;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillStyle = "#ffffff";
+      ctx.fillText("X", rect.x + rect.width, rect.y);
+
+      if (mouseClicked && mouseInLastCircle()) {
+        registerClick(() => {
+          emit(Constants.messages.deleteBuilding, {
+            buildingId: building.id,
+          });
+        });
+      }
+    }
 
   });
 
@@ -145,7 +181,9 @@ function renderBuildings() {
 
 function renderStructures() {
 
-  const { structures } = renderingState;
+  const { structures, playerId, territory } = renderingState;
+
+  const { deletingObject } = getInternalState();
 
   structures.forEach(structure => {
       
@@ -153,7 +191,41 @@ function renderStructures() {
 
     let asset = getAsset(type.image.split('.')[0]);
 
-    drawBuilding(asset, x, y);
+    let rect = drawBuilding(asset, x, y);
+
+    if (playerId !== territory[y][x]) return;
+
+    if (mouseClicked && mouseInRect(rect)) {
+      registerClick(() => {
+        mutateInternalState(state => {
+          state.deletingObject = structure.id;
+        })
+      });
+
+      registerNextUnhandledClickHandler(() => {
+        mutateInternalState(state => {
+          state.deletingObject = null;
+        })
+      });
+    }
+
+    if (deletingObject == structure.id) {
+      ctx.fillStyle = "#ff0000";
+      ctx.fillCircle(rect.x + rect.width, rect.y, 8);
+      ctx.fontSize = 11;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillStyle = "#ffffff";
+      ctx.fillText("X", rect.x + rect.width, rect.y);
+
+      if (mouseClicked && mouseInLastCircle()) {
+        registerClick(() => {
+          emit(Constants.messages.deleteStructure, {
+            structureId: structure.id,
+          });
+        });
+      }
+    }
 
   });
 

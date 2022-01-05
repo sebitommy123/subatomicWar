@@ -17,6 +17,12 @@ class Building {
     return this.game.getCityAuraAtPosition(this.x, this.y);
   }
 
+  remove() {
+
+    this.game.buildings.splice(this.game.buildings.indexOf(this), 1);
+
+  }
+
   isActive() {
 
     return this.getCity().getPlayer().id == this.getPlayer().id;

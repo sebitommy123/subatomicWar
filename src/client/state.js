@@ -17,6 +17,7 @@ let internalState = {
   buyingCity: false,
   buyingBuilding: null,
   buyingStructure: null,
+  deletingObject: null,
 };
 let me;
 

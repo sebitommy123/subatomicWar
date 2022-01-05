@@ -13,6 +13,10 @@ class Structure {
 
   }
 
+  getPlayer() {
+    return this.game.getPlayerAtPosition(this.x, this.y);
+  }
+
   remove() {
 
     this.game.structures.splice(this.game.structures.indexOf(this), 1);
