@@ -16,5 +16,6 @@ jobs:
           npm run build
           git config --global user.name 'sebitommy123'
           git config --global user.email 'sebi.szafir@hotmail.com'
+          git add dist/*
           git commit -am "Automated build"
           git push origin deploy
