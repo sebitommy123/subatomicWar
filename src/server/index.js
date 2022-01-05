@@ -21,7 +21,7 @@ function temporaryInit() {
 
 function handleSocketConnection(socket) {
 
-  const lobby = new Lobby();
+  /*const lobby = new Lobby();
 
   socket.setState({ screen: "playMenu", name: htmlentities("input.name"), lobbyAvailable: null });
 
@@ -33,7 +33,7 @@ function handleSocketConnection(socket) {
 
   startGameFromLobby(lobby);
 
-  return;
+  return;*/
 
   socket.setState({
     screen: "nameMenu",
@@ -79,6 +79,7 @@ function handleSocketConnection(socket) {
       const lobby = getLobbyById(socket.state.lobby.id);
       if (lobby && lobby.open) {
         startGameFromLobby(lobby);
+        lobbies.push(new Lobby());
       }
     }
   });

@@ -293,7 +293,7 @@ class Shop {
     this.addItem({
       name: "City",
       desc: "Settle a new city",
-      cost: { wood: 200, gold: 50 },
+      cost: { wood: 100, gold: 100 },
       image: "city.png",
       type: "city",
       resourceYield: {},
