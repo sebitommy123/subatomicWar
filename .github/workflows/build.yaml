@@ -12,10 +12,8 @@ jobs:
         with:
           node-version: '14'
       - run: |
-          npm install
-          npm run build
-          git config --global user.name 'sebitommy123'
-          git config --global user.email 'sebi.szafir@hotmail.com'
-          git add dist/*
-          git commit -am "Automated build"
-          git push origin deploy
+          docker build . -t commonwealth
+          export CR_PAT=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
+          echo $CR_PAT | docker login ghcr.io -u USERNAME --password-stdin
+          docker tag commonwealth ghcr.io/sebitommy123/commonwealth:latest
+          docker push ghcr.io/sebitommy123/commonwealth:latest
