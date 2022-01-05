@@ -1,0 +1,14 @@
+[Unit]
+Description=Commonwealth
+Documentation=https://example.com
+After=network.target
+
+[Service]
+Environment=PORT=3002
+Type=simple
+User=ec2-user
+ExecStart=/home/ec2-user/.nvm/versions/node/v17.3.0/bin/node /home/ec2-user/subatomicWar
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
