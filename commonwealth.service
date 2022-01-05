@@ -8,7 +8,8 @@ Environment=PORT=3002
 Environment=NODE_ENV=development
 Type=simple
 User=ec2-user
-ExecStart=(cd /home/ec2-user/subatomicWar && /home/ec2-user/.nvm/versions/node/v17.3.0/bin/node /home/ec2-user/subatomicWar/src/server/index.js)
+WorkingDirectory=/home/ec2-user/subatomicWar
+ExecStart=/home/ec2-user/.nvm/versions/node/v17.3.0/bin/node /home/ec2-user/subatomicWar/src/server/index.js
 Restart=on-failure
 
 [Install]
