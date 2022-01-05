@@ -47,6 +47,7 @@ export function stopAllPlacing() {
     state.selectedUnit = null;
     state.buyingBuilding = null;
     state.buyingCity = false;
+    state.buyingStructure = null;
 
     forceStopDrag();
   });

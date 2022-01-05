@@ -31,7 +31,7 @@ const landTypes = {
   },
   mountains: {
     name: "Mountains",
-    combat: { attack: 1, defense: 2 },
+    combat: { attack: 1, defense: 1.5 },
     canWalk: true,
   },
 }

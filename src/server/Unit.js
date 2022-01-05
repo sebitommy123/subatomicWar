@@ -57,7 +57,7 @@ class Unit {
       }        
     } else {
       this.forceGround();
-      this.game.territory[this.vagrantData.toY][this.vagrantData.toX] = this.player.id;
+      this.game.seizeTerritory(this.vagrantData.toX, this.vagrantData.toY, this.player);
     }
   }
 
@@ -145,6 +145,10 @@ class Unit {
     return this.game.getCityAtPosition(this.x, this.y);
   }
 
+  structureBelow() {
+    return this.game.getStructureAtPosition(this.x, this.y);
+  }
+
   getMultiplier(name) {
     let multiplier = landTypes[this.landBelow()].combat[name];
     
@@ -153,6 +157,9 @@ class Unit {
     
     let city = this.cityBelow();
     if (city) multiplier *= this.game.shop.items.find(i => i.type === "city").combat[name];
+    
+    let structure = this.structureBelow();
+    if (structure && structure.type.combat[name]) multiplier *= structure.type.combat[name];
 
     return multiplier;
   }
@@ -238,8 +245,8 @@ class Unit {
       });
     }
 
-    this.game.territory[this.y][this.x] = winningPlayer.id;
-
+    this.game.seizeTerritory(this.x, this.y, winningPlayer);
+    
   }
 
   toClient() {

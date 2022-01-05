@@ -1,6 +1,6 @@
 const ASSET_NAMES = [
   "soldier.png", 
-  "barracks.png", "city.png", "farm.png", "mine.png", "lumbermill.png", "university.png", "oilRig.png",
+  "barracks.png", "city.png", "farm.png", "mine.png", "lumbermill.png", "university.png", "oilRig.png", "trench.png",
   "gold.png", "wood.png", "oil.png",
   "grass.png", "desert.png", "plains.png", "forest.png", "mountains.png", "oilTile.png", "water.png"];
 

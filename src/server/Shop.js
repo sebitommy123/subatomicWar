@@ -4,6 +4,7 @@ const Constants = require("../shared/constants");
 const { resolveTerritoryBlacklist, isIsolatedPosition } = require("../shared/utils");
 const { Building } = require("./Building");
 const { City } = require("./City");
+const { Structure } = require("./Structure");
 const { Unit } = require("./Unit");
 
 class Shop {
@@ -35,6 +36,39 @@ class Shop {
 
   addItemHandlers() {
 
+    this.handlers["structure"] = (player, item, input) => {
+
+      const { x, y } = input;
+
+      if (x == null || y == null) return;
+
+      if (this.game.territory[y][x] !== player.id) return;
+
+      if (!player.canAfford(item.cost)) {
+        player.socket.emitError(`You don't have enough resources to buy a ${item.name}.`);
+        return;
+      }
+
+      if (this.game.isAnythingAtPos(x, y)) {
+
+        player.socket.emitError(`There is already something here.`);
+
+      }
+
+      if (this.game.fightingOccuringAt(x, y)) {
+        player.socket.emitError(`You can't place where there is fighting occuring.`);
+        return;
+      }
+
+      player.pay(item.cost);
+
+      let structure = new Structure(this.game, x, y, item);
+      this.game.structures.push(structure);
+
+      this.game.sendSyncUpdate();
+
+    }
+
     this.handlers["building"] = (player, item, input) => {
 
       const { x, y } = input;
@@ -48,18 +82,10 @@ class Shop {
         return;
       }
 
-      let buildingAtPos = this.game.getBuildingAtPosition(x, y);
+      if (this.game.isAnythingAtPos(x, y)) {
 
-      if (buildingAtPos) {
-        player.socket.emitError(`There is already a ${buildingAtPos.type.name} here.`);
-        return;
-      }
+        player.socket.emitError(`There is already something here.`);
 
-      let cityAtPos = this.game.getCityAtPosition(x, y);
-
-      if (cityAtPos) {
-        player.socket.emitError(`There is already a city here.`);
-        return;
       }
       
       let cityAuraAtPos = this.game.getCityAuraAtPosition(x, y);
@@ -79,8 +105,7 @@ class Shop {
         return;
       }
 
-      let unitAtPos = this.game.getUnitAtPosition(x, y);
-      if (unitAtPos && unitAtPos.fighting) {
+      if (this.game.fightingOccuringAt(x, y)) {
         player.socket.emitError(`You can't place where there is fighting occuring.`);
         return;
       }
@@ -116,6 +141,13 @@ class Shop {
       if (!isIsolatedPosition({x, y}, this.game.cities.map(city => ({x: city.x, y: city.y})))) {
         player.socket.emitError("Position is too close to someone else's.");
         return;
+      }
+
+      if (this.game.isAnythingAtPos(x, y)) {
+          
+        player.socket.emitError(`There is already something here.`);
+        return;
+          
       }
 
       player.pay(item.cost);
@@ -175,6 +207,7 @@ class Shop {
       blacklist: {
         water: { allowed: false }
       },
+      tags: [],
     });
 
     this.addItem({
@@ -193,7 +226,8 @@ class Shop {
         forest: { allowed: true },
         mountains: { allowed: true, efficiency: 2 },
         oil: { allowed: false },
-      }
+      },
+      tags: [],
     });
 
     this.addItem({
@@ -212,7 +246,8 @@ class Shop {
         forest: { allowed: true },
         mountains: { allowed: true, efficiency: 0.5 },
         oil: { allowed: false },
-      }
+      },
+      tags: [],
     });
 
     this.addItem({
@@ -231,7 +266,8 @@ class Shop {
         forest: { allowed: true },
         mountains: { allowed: false },
         oil: { allowed: false },
-      }
+      },
+      tags: [],
     });
 
     this.addItem({
@@ -250,7 +286,8 @@ class Shop {
         forest: { allowed: false },
         mountains: { allowed: false },
         oil: { allowed: true },
-      }
+      },
+      tags: [],
     });
 
     this.addItem({
@@ -265,7 +302,25 @@ class Shop {
       blacklist: {
         water: { allowed: false },
         oil: { allowed: false },
-      }
+      },
+      tags: [],
+    });
+
+    this.addItem({
+      name: "Trench",
+      desc: "Better defensive position for your units",
+      cost: { wood: 20 },
+      image: "trench.png",
+      type: "structure",
+      resourceYield: {},
+      food: 0,
+      combat: { defense: 1.5, attack: 1 },
+      blacklist: {
+        water: { allowed: false },
+        oil: { allowed: false },
+        mountains: { allowed: false },
+      },
+      tags: [],
     });
 
   }

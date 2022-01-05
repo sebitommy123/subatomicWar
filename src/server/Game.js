@@ -31,6 +31,7 @@ class Game {
     this.vagrantUnits = [];
     this.cities = [];
     this.buildings = [];
+    this.structures = [];
 
     this.dayStart = null;
     
@@ -342,6 +343,24 @@ class Game {
 
   }
 
+  getStructureAtPosition(x, y) {
+    return this.structures.find(s => s.x == x && s.y == y);
+  }
+
+  isAnythingAtPos(x, y) {
+
+    if (this.getBuildingAtPosition(x, y)) return true;
+    if (this.getCityAtPosition(x, y)) return true;
+    if (this.getStructureAtPosition(x, y)) return true;
+
+  }
+
+  fightingOccuringAt(x, y) {
+    let unitAtPos = this.getUnitAtPosition(x, y);
+
+    return unitAtPos && unitAtPos.fighting;
+  }
+
   setStateAll(updateFunc) {
       
     this.players.forEach(player => {
@@ -353,6 +372,21 @@ class Game {
 
   getPlayerById(pid) {
     return this.players.find(p => p.id == pid);
+  }
+
+  seizeTerritory(x, y, player) {
+
+    let lastOwner = this.territory[y][x];
+
+    this.territory[y][x] = player.id;
+
+    if (lastOwner != null && lastOwner !== player.id) {
+      let structure = this.getStructureAtPosition(x, y);
+      if (structure && structure.type.name == "Trench") {
+        structure.remove();
+      }
+    }
+
   }
 
   sendSyncUpdate() {
@@ -373,6 +407,7 @@ class Game {
         land: this.land,
         cities: this.cities.map(c => c.toClient()),
         buildings: this.buildings.map(b => b.toClient()),
+        structures: this.structures.map(s => s.toClient()),
         landTypes: landTypes,
       };
   

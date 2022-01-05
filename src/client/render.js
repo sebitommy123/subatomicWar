@@ -103,6 +103,7 @@ function render() {
     if (renderingState.stage === "game") {
       renderCities();
       renderBuildings();
+      renderStructures();
 
       renderingHoveringTile();
 
@@ -113,6 +114,7 @@ function render() {
       renderPurchasingUnit();
       renderPurchasingBuilding();
       renderPurchasingCity();
+      renderPurchasingStructure();
     }
 
     renderEscapeMessage();
@@ -141,11 +143,27 @@ function renderBuildings() {
 
 }
 
+function renderStructures() {
+
+  const { structures } = renderingState;
+
+  structures.forEach(structure => {
+      
+    let { x, y, type } = structure;
+
+    let asset = getAsset(type.image.split('.')[0]);
+
+    drawBuilding(asset, x, y);
+
+  });
+
+}
+
 function renderEscapeMessage() {
 
-  const { draggingUnit, selectedUnit, buyingUnit, buyingBuilding, buyingCity } = getInternalState();
+  const { draggingUnit, selectedUnit, buyingUnit, buyingBuilding, buyingCity, buyingStructure } = getInternalState();
 
-  if (!draggingUnit && !selectedUnit && !buyingUnit && !buyingBuilding && !buyingCity) return;
+  if (!draggingUnit && !selectedUnit && !buyingUnit && !buyingBuilding && !buyingCity && !buyingStructure) return;
 
   ctx.abs.font = "15px Arial";
   let width = ctx.abs.measureText("Press Escape to cancel").width;
@@ -366,8 +384,7 @@ function renderPurchasingBuilding() {
   let unitAtPos = units.find(unit => unit.playerId == playerId && unit.x == tileX && unit.y == tileY);
   if (unitAtPos && unitAtPos.fighting) canBuy = false;
 
-  let buildingAtPos = buildings.find(building => building.x == tileX && building.y == tileY);
-  if (buildingAtPos) canBuy = false;
+  if (anythingAtPos(tileX, tileY)) canBuy = false;
   
   if (territory[tileY][tileX] !== playerId) canBuy = false;
 
@@ -467,6 +484,130 @@ function renderPurchasingBuilding() {
 
 }
 
+function anythingAtPos(x, y) {
+
+  if(getBuildingAtPosition(x, y)) return true;
+
+  if(getCityAtPosition(x, y)) return true;
+
+  if(getStructureAtPosition(x, y)) return true;
+
+  return false;
+
+}
+
+function renderPurchasingStructure() {
+
+  const { land, shopItems, buildings, cities, units, playerId, territory, gridDimensions } = renderingState;
+  const { buyingStructure } = getInternalState();
+  
+  if (!buyingStructure) return;
+
+  let tileX = tileMouseX();
+  let tileY = tileMouseY();
+
+  if (!inBounds(tileX, tileY, gridDimensions.width, gridDimensions.height)) return false;
+
+  let itemBuying = shopItems.find(item => item.id == buyingStructure);
+
+  let canBuy = canBuyResource(itemBuying.cost, getResources());
+
+  let unitAtPos = units.find(unit => unit.playerId == playerId && unit.x == tileX && unit.y == tileY);
+  if (unitAtPos && unitAtPos.fighting) canBuy = false;
+
+  if (anythingAtPos(tileX, tileY)) canBuy = false;
+  
+  if (territory[tileY][tileX] !== playerId) canBuy = false;
+
+  const { allowed, efficiency } = resolveTerritoryBlacklist(itemBuying.blacklist, land[tileY][tileX]);
+  if (!allowed) canBuy = false;
+
+  if (mouseClicked) {
+    registerClick(() => {
+  
+      if (territory[tileY][tileX] !== playerId) {
+
+        displayError("You can only place buildings in your territory.");
+
+        return;
+
+      }
+
+      emit(Constants.messages.buyFromShop, {
+        itemId: itemBuying.id,
+        x: tileX,
+        y: tileY
+      });
+  
+    });
+  }
+  
+  ctx.globalAlpha = 0.3;
+  ctx.fillStyle = "green";
+
+  if (!canBuy) ctx.fillStyle = "red";
+
+  ctx.fillRect(tileX * RenderConstants.CELL_WIDTH, tileY * RenderConstants.CELL_HEIGHT, RenderConstants.CELL_WIDTH, RenderConstants.CELL_HEIGHT);
+  ctx.globalAlpha = 1;
+
+  let asset = getAsset(itemBuying.image.split(".")[0]);
+
+  let rect = drawBuilding(asset, tileX, tileY);
+
+  ctx.globalAlpha = 0.9;
+  renderCost(itemBuying.cost, rect.x + rect.width/2, rect.y + rect.height * 0.7);
+  ctx.globalAlpha = 1;
+
+  if (efficiency) {
+
+    let showEfficiency = Math.floor(efficiency * 100);
+    let message;
+    if (showEfficiency > 100) {
+      showEfficiency -= 100;
+      showEfficiency = `+${showEfficiency}%`;
+      message = "higher rates";
+      ctx.fillStyle = "#005c15";
+    } else if (showEfficiency < 100) {
+      showEfficiency = 100 - showEfficiency;
+      showEfficiency = `-${showEfficiency}%`;
+      message = "lower rates";
+      ctx.fillStyle = "#5c0000";
+    }
+
+    message = `${itemBuying.name}s yield ${showEfficiency} ${message} in ${land[tileY][tileX]} tiles`;
+    
+    let fontSize = 4;
+    ctx.fontSize = fontSize;
+    let textWidth = ctx.measureText(message).width;
+    
+    let innerMargin = 3;
+    let innerPadding = 3;
+    let marginBottom = 6;
+
+    let boxWidth = 22;
+
+    let totalWidth = boxWidth + innerMargin + innerPadding*2 + textWidth;
+    let totalHeight = innerPadding * 2 + fontSize;
+    let totalY = rect.y - marginBottom - totalHeight;
+
+    let boxX = rect.x + rect.width/2 - totalWidth/2;
+    ctx.fillRect(boxX, totalY, boxWidth, totalHeight);
+
+    ctx.fillStyle = "#404040";
+    ctx.fillRect(boxX + boxWidth + innerMargin, totalY, innerPadding*2 + textWidth, totalHeight);
+
+    ctx.textBaseline = "middle";
+    ctx.textAlign = "center";
+    ctx.fillStyle = "white";
+    ctx.fillText(message, boxX + boxWidth + innerMargin + innerPadding + textWidth/2, totalY + innerPadding + fontSize/2);
+
+    ctx.fontSize = 5;
+    ctx.fillText(showEfficiency, boxX + boxWidth/2, totalY + totalHeight/2);
+
+  }
+
+}
+
 function drawBuilding(asset, x, y) {
 
   ctx.drawImage(asset, x * RenderConstants.CELL_WIDTH + RenderConstants.BUILDING_PADDING, y * RenderConstants.CELL_HEIGHT + RenderConstants.BUILDING_PADDING, RenderConstants.CELL_WIDTH - RenderConstants.BUILDING_PADDING*2, RenderConstants.CELL_HEIGHT - RenderConstants.BUILDING_PADDING*2);
@@ -485,6 +626,22 @@ function getBuildingAtPosition(x, y) {
   const { buildings } = renderingState;
 
   return buildings.find(building => building.x == x && building.y == y);
+
+}
+
+function getCityAtPosition(x, y) {
+
+  const { cities } = renderingState;
+
+  return cities.find(city => city.x == x && city.y == y);
+
+}
+
+function getStructureAtPosition(x, y) {
+
+  const { structures } = renderingState;
+
+  return structures.find(structure => structure.x == x && structure.y == y);
 
 }
 

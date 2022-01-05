@@ -22,6 +22,9 @@ function Item({ id, name, imageSrc, cost, type, description }) {
       } else if (type == "city") {
         stopAllPlacing();
         state.buyingCity = true;
+      } else if (type == "structure") {
+        stopAllPlacing();
+        state.buyingStructure = id;
       }
     });
 

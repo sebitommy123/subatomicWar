@@ -15,7 +15,8 @@ let internalState = {
   draggingUnit: null,
   buyingUnit: false,
   buyingCity: false,
-  buyingBuilding: null
+  buyingBuilding: null,
+  buyingStructure: null,
 };
 let me;
 
