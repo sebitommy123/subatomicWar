@@ -14,6 +14,6 @@ jobs:
       - run: |
           docker build . -t commonwealth
           export CR_PAT=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
-          echo $CR_PAT | docker login ghcr.io -u USERNAME --password-stdin
+          echo $CR_PAT | docker login ghcr.io -u sebitommy123 --password-stdin
           docker tag commonwealth ghcr.io/sebitommy123/commonwealth:latest
           docker push ghcr.io/sebitommy123/commonwealth:latest
