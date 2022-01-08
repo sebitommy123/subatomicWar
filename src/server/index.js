@@ -21,19 +21,19 @@ function temporaryInit() {
 
 function handleSocketConnection(socket) {
 
-  /*const lobby = new Lobby();
+  const lobby = new Lobby();
 
   socket.setState({ screen: "playMenu", name: htmlentities("input.name"), lobbyAvailable: null });
 
   lobby.addSocket(socket);
 
   lobby.config.waitTime = 2;
-  lobby.config.startingResources = {gold: 1000, wood: 1000, oil: 1000};
+  lobby.config.startingResources = {gold: 10000, wood: 10000, oil: 10000};
   lobby.config.resourcesPerDay = {gold: 0, wood: 0, oil: 0};
 
   startGameFromLobby(lobby);
 
-  return;*/
+  return;
 
   socket.setState({
     screen: "nameMenu",

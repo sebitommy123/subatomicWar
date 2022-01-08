@@ -1,0 +1,44 @@
+
+DONE
+ - unify client state
+
+TODO
+ - split render up
+ - animate buildings giving you resources
+ - scrolling is too harsh
+ - effectiveness of gold mines down to 1.4 on mountains
+ - placing buildings should highlight valid placing locations in gold (city auras)
+ - placing cities should highlight valid placing locations
+ - only allow placing soldiers on cities, barracks or airports
+ - buildings cost gold
+ - add right click menu
+ - add cursor becoming a pointer when you can click, add more hover animations
+	Only active clickable surfaces show a cursor
+	Passive clickable surfaces don't
+ - make land and buildings passive clickable
+	Gives more information about the land and building in general, and this building in specific
+ - when you click on a unit, show a panel on the left with more info
+ - add spritesheets, make soldiers move
+ - trench cost down to 15 wood
+ - trench defense multiplier to 1.7
+ - mines and lumber mill negative multipliers up to 0.6
+ - make a panel to see what a building does before placing
+ - cities produce 1 gold and 1 wood per turn
+ - get sprites for more tiles, items and buildings
+ - tell user when they have been disconnected from server
+ - remove games and lobbies if they are empty
+ - create lobby system
+ - add private lobbies
+ - remove scrollable from soldiers, make labels scrollable instead (scroll over quantity or gold to change it)
+ - separate server into two
+ - show name of empire somewhere
+ - show soldier alliegance somewhere
+ 
+Future updates:
+ - Military industrial complex
+	Barracks, Fortification, Missile silo, Watchtower, Oil
+ - Building upgrades
+ - Trading update
+	Markets and influence
+ - Mobility update
+	Airports, roads, railroads

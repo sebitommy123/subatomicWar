@@ -1,6 +1,6 @@
 import React from 'react'
-import { getInternalState, getMe } from '../state';
-import { getDayTime } from '../utils';
+import { getMe } from '../utils/game';
+import { getDayTime } from '../utils/general';
 import styles from './actionBar.module.css';
 import TopBar from './topBar';
 import MainContent from './mainContent';

@@ -4,17 +4,24 @@ import { debounce } from 'throttle-debounce';
 import { getAsset } from './assets';
 import BetterCtx from './betterCtx';
 import { updateStageInfo } from './stageInfo';
+import { canBuyResource, getMaxUnitPurchase, getQuantityBarAmount, getQuantityBarPurchaseCost, getResources, inBounds } from './utils/general';
 import { registerClick, mouseClicked, tickEnd, tickStart, registerDraggableSurface, mouseX, mouseY, registerNonDraggableSurface, registerScrollableSurface, registerNonScrollableSurface, registerNextMouseUpHandler, gameMouseY, gameMouseX, registerNextUnhandledClickHandler, tileMouseX, tileMouseY, stopAllPlacing } from './userInput';
-import { canBuyResource, decayingQuantity, displayError, getHoveringTileCoords, getMaxUnitPurchase, getQuantityBarAmount, getQuantityBarPurchaseCost, getResources, inBounds, mouseInLastCircle, mouseInLastRect, mouseInRect, pointInRect, sinusoidalTimeValue } from './utils';
+
+
 import { emit } from './networking';
 
 import Constants from '../shared/constants';
-import { getById, getInternalState, getMe, mutateInternalState, flipNeighborList, clockwiseDir, getTerritoryDirFrom, getTerritoryDirPositionFrom, getDirectionFromPosToPos } from './state';
+import { getInternalState, mutateInternalState, getExternalState } from './state';
 import { getAdjescentPositions, getAuraPositions, getRingPositions, isAdjescent, isIsolatedPosition, positionInPositionList, resolveTerritoryBlacklist } from '../shared/utils';
+import { decayingQuantity, sinusoidalTimeValue } from './utils/math';
+import { displayError } from './utils/display';
+import { getHoveringTileCoords, mouseInLastCircle, mouseInRect, pointInRect, flipNeighborList, clockwiseDir, getTerritoryDirFrom, getTerritoryDirPositionFrom, getDirectionFromPosToPos, positionCenteredAt } from './utils/geometry';
+import { getMe, getUnitById, getById, canUnitMoveTo } from './utils/game';
+import { renderSoldier, renderSoldierAndQuantity, renderUnit, renderVagrantUnit } from './render/soldier';
+import { renderProperty } from './render/property';
 
 let animationTickCounter = 0;
 let animationTick = 0;
-let renderingState;
 export const canvas = document.getElementById('canvas');
 export const ctx = new BetterCtx(canvas.getContext('2d'));
 
@@ -23,21 +30,9 @@ export const RenderConstants = Object.freeze({
   CELL_HEIGHT: 100,
   SIDE_SIZE: () => Math.min(7 / ctx.zoom, 8),
   SOLDIER_PADDING: 10,
-  VAGRANT_FIGHTING_INSET: 0.7,
+  VAGRANT_FIGHTING_INSET: 30,
   BUILDING_PADDING: 10,
 });
-
-export function setRenderingState(newState) {
-
-  let lastState = renderingState;
-
-  renderingState = newState;
-
-  if (newState.territory && lastState.territory != newState.territory) {
-    recomputeTerritoryNeighbors();
-  }
-
-}
 
 export function initRender() { 
   /**
@@ -69,9 +64,11 @@ function callAnimationLoop(func) {
 
 function render() {
 
+  const { screen, stage } = getExternalState();
+
   tickStart();
 
-  if (renderingState.screen === "game" && renderingState.stage === "game") {
+  if (screen === "game" && stage === "game") {
 
     const { selectedUnit } = getInternalState();
     if (selectedUnit && !getUnitById(selectedUnit)) {
@@ -83,7 +80,7 @@ function render() {
   ctx.fillStyle = "#d4f1f9";
   ctx.abs.fillRect(0, 0, canvas.width, canvas.height);
 
-  if (renderingState.screen !== 'game') {
+  if (screen !== 'game') {
     renderMainMenu();
 
   } else {
@@ -95,12 +92,11 @@ function render() {
 
     renderTerritory();
     
-    if (renderingState.stage === "pregame") {
+    if (stage === "pregame") {
       renderSelectStartingPosition();
-      updateStageInfo();
     }
 
-    if (renderingState.stage === "game") {
+    if (stage === "game") {
       renderCities();
       renderBuildings();
       renderStructures();
@@ -129,33 +125,14 @@ function render() {
 
 function renderBuildings() {
 
-  const { buildings, playerId, territory } = renderingState;
-
+  const { buildings } = getExternalState();
   const { deletingObject } = getInternalState();
 
   buildings.forEach(building => {
-      
+
     let { x, y, type } = building;
 
-    let asset = getAsset(type.image.split('.')[0]);
-
-    let rect = drawBuilding(asset, x, y);
-
-    if (playerId !== territory[y][x]) return;
-
-    if (mouseClicked && mouseInRect(rect)) {
-      registerClick(() => {
-        mutateInternalState(state => {
-          state.deletingObject = building.id;
-        })
-      });
-
-      registerNextUnhandledClickHandler(() => {
-        mutateInternalState(state => {
-          state.deletingObject = null;
-        })
-      });
-    }
+    let rect = renderProperty(x, y, type);
 
     if (deletingObject == building.id) {
       ctx.fillStyle = "#ff0000";
@@ -165,7 +142,7 @@ function renderBuildings() {
       ctx.textBaseline = "middle";
       ctx.fillStyle = "#ffffff";
       ctx.fillText("X", rect.x + rect.width, rect.y);
-
+  
       if (mouseClicked && mouseInLastCircle()) {
         registerClick(() => {
           emit(Constants.messages.deleteBuilding, {
@@ -181,7 +158,7 @@ function renderBuildings() {
 
 function renderStructures() {
 
-  const { structures, playerId, territory } = renderingState;
+  const { structures, playerId, territory } = getExternalState();
 
   const { deletingObject } = getInternalState();
 
@@ -250,7 +227,7 @@ function renderEscapeMessage() {
 
 }
 
-function renderCost(cost, x, y) {
+export function renderCost(cost, x, y) {
 
   // delete null values from object cost
   for (let key in cost) {
@@ -298,7 +275,7 @@ function renderCost(cost, x, y) {
 
 function renderPurchasingUnit() {
 
-  const { shopItems, units, playerId, territory, gridDimensions } = renderingState;
+  const { shopItems, units, playerId, territory, gridDimensions } = getExternalState();
   const { buyingUnit, quantityBar } = getInternalState();
   
   if (!buyingUnit || !quantityBar) return;
@@ -351,7 +328,7 @@ function renderPurchasingUnit() {
 
   if (unitAtPos) renderQuantity += unitAtPos.quantity;
 
-  let rect = renderSoldier(tileX, tileY, renderQuantity, true);
+  let rect = renderSoldierAndQuantity({ ...positionCenteredAt(tileX, tileY), c: 0 }, renderQuantity, true);
 
   ctx.globalAlpha = 0.9;
   renderCost(getQuantityBarPurchaseCost(shopItems), rect.x + rect.width/2, rect.y + rect.height * 0.7);
@@ -378,7 +355,7 @@ function renderPurchasingUnit() {
 
 function renderPurchasingCity() {
 
-  const { land, shopItems, cities, units, playerId, territory, gridDimensions } = renderingState;
+  const { land, shopItems, cities, units, playerId, territory, gridDimensions } = getExternalState();
   const { buyingCity } = getInternalState();
   
   if (!buyingCity) return;
@@ -439,7 +416,7 @@ function renderPurchasingCity() {
 
 function renderPurchasingBuilding() {
 
-  const { land, shopItems, buildings, cities, units, playerId, territory, gridDimensions } = renderingState;
+  const { land, shopItems, buildings, cities, units, playerId, territory, gridDimensions } = getExternalState();
   const { buyingBuilding } = getInternalState();
   
   if (!buyingBuilding) return;
@@ -570,7 +547,7 @@ function anythingAtPos(x, y) {
 
 function renderPurchasingStructure() {
 
-  const { land, shopItems, buildings, cities, units, playerId, territory, gridDimensions } = renderingState;
+  const { land, shopItems, buildings, cities, units, playerId, territory, gridDimensions } = getExternalState();
   const { buyingStructure } = getInternalState();
   
   if (!buyingStructure) return;
@@ -695,7 +672,7 @@ function drawBuilding(asset, x, y) {
 
 function getBuildingAtPosition(x, y) {
 
-  const { buildings } = renderingState;
+  const { buildings } = getExternalState();
 
   return buildings.find(building => building.x == x && building.y == y);
 
@@ -703,7 +680,7 @@ function getBuildingAtPosition(x, y) {
 
 function getCityAtPosition(x, y) {
 
-  const { cities } = renderingState;
+  const { cities } = getExternalState();
 
   return cities.find(city => city.x == x && city.y == y);
 
@@ -711,7 +688,7 @@ function getCityAtPosition(x, y) {
 
 function getStructureAtPosition(x, y) {
 
-  const { structures } = renderingState;
+  const { structures } = getExternalState();
 
   return structures.find(structure => structure.x == x && structure.y == y);
 
@@ -719,9 +696,9 @@ function getStructureAtPosition(x, y) {
 
 function renderCities() {
 
-  const { territory, playerId, gridDimensions } = renderingState;
+  const { territory, playerId, gridDimensions, cities } = getExternalState();
 
-  renderingState.cities.forEach(city => {
+  cities.forEach(city => {
 
     let { x, y, population, turnsLeft, id } = city;
 
@@ -758,129 +735,20 @@ function renderCities() {
 
 function renderVagrantUnits() {
 
-  const { vagrantUnits, territory, units } = renderingState;
+  const { vagrantUnits, territory, units } = getExternalState();
   const { selectedUnit, draggingUnit, quantityBar } = getInternalState();
 
   vagrantUnits.forEach((vagrantUnit) => {
 
-    let { x, y, quantity, fighting, vagrantData } = vagrantUnit;
-
-    let { toX, toY, start, end } = vagrantData;
-
-    let delta = Date.now() - start;
-    let totalDuration = end - start;
-
-    let progress = delta / totalDuration;
-
-    if (progress > 1) progress = 1;
-
-    let current = getVagrantXYCStart(vagrantUnit);
-    let goal = getVagrantXYCGoal(vagrantUnit);
-
-    let interpolated = interpolateXYC(current, goal, progress);
-
-    let { x: xPos, y: yPos, c: cPos } = fighting ? goal : interpolated;
-
-    let quantityToDisplay = quantity;
-    let occilate = false;
-
-    if (selectedUnit && selectedUnit == vagrantUnit.id) {
-      if (draggingUnit && quantityBar) quantityToDisplay = quantityBar.max - getQuantityBarAmount();
-      occilate = true;
-    }
-
-    let rect = renderSoldier(xPos, yPos, quantityToDisplay, occilate, cPos, getDirectionFromPosToPos(x, y, toX, toY));
-
-    if (fighting && mouseInRect(rect)) {
-
-      handleMouseOverUnit(vagrantUnit, rect);
-  
-    }
-
-    renderPossibleQuantityChange(vagrantUnit, rect.x + rect.width, rect.y - rect.height * 0.5, cPos===1);
+    renderVagrantUnit(vagrantUnit);
 
   });
 
 }
 
-function interpolateXYC(start, end, progress) {
-
-  let x = start.x + (end.x - start.x) * progress;
-  let y = start.y + (end.y - start.y) * progress;
-  let c = start.c + (end.c - start.c) * progress;
-
-  return {x, y, c};
-
-}
-
-function getVagrantXYCStart(vagrantUnit) {
-
-  const { vagrantUnits, territory, units } = renderingState;
-  const { selectedUnit, draggingUnit, quantityBar } = getInternalState();
-
-  let { playerId, x, y, quantity, fighting, retreating, vagrant, vagrantData } = vagrantUnit;
-
-  let { toX, toY, start, end } = vagrantData;
-
-  let direction = getDirectionFromPosToPos(x, y, toX, toY);
-
-  let unitAtStart = units.find(unit => unit.x === x && unit.y === y);
-
-  if (retreating) {
-
-    if (direction == "right") return { x: toX - RenderConstants.VAGRANT_FIGHTING_INSET, y: toY, c: 1 };
-    if (direction == "left") return { x: toX + RenderConstants.VAGRANT_FIGHTING_INSET, y: toY, c: 1 };
-    if (direction == "top") return { x: toX, y: toY + RenderConstants.VAGRANT_FIGHTING_INSET, c: 1 };
-    if (direction == "bottom") return { x: toX, y: toY - RenderConstants.VAGRANT_FIGHTING_INSET, c: 1 };
-
-  } else {
-
-    if (unitAtStart && unitAtStart.playerId == playerId && unitAtStart.fighting) {
-      return {x: x, y: y, c: 1};
-    }
-
-    return {x: x, y: y, c: 0};
-
-  }
-
-}
-
-function getVagrantXYCGoal(vagrantUnit) {
-
-  const { vagrantUnits, territory, units } = renderingState;
-  const { selectedUnit, draggingUnit, quantityBar } = getInternalState();
-
-  let { playerId, x, y, quantity, fighting, vagrant, vagrantData } = vagrantUnit;
-
-  let { toX, toY, start, end } = vagrantData;
-
-  let direction = getDirectionFromPosToPos(x, y, toX, toY);
-
-  let enemyAtDestination = false;
-  let unitAtDestination = units.find(unit => unit.x === toX && unit.y === toY);
-  if (unitAtDestination != null && unitAtDestination.playerId != playerId) {
-    enemyAtDestination = true;
-  }
-
-  if (!enemyAtDestination && !fighting) {
-    if (unitAtDestination) {
-      if (unitAtDestination.playerId == playerId && unitAtDestination.fighting) {
-        return { x: toX, y: toY, c: 1 };
-      }
-    }
-    return { x: toX, y: toY, c: 0 };
-  } else {
-    if (direction == "right") return { x: x + RenderConstants.VAGRANT_FIGHTING_INSET, y: y, c: 1 };
-    if (direction == "left") return { x: x - RenderConstants.VAGRANT_FIGHTING_INSET, y: y, c: 1 };
-    if (direction == "top") return { x: x, y: y - RenderConstants.VAGRANT_FIGHTING_INSET, c: 1 };
-    if (direction == "bottom") return { x: x, y: y + RenderConstants.VAGRANT_FIGHTING_INSET, c: 1 };
-  }
-  
-}
-
 function renderingHoveringTile() {
 
-  const { units } = renderingState;
+  const { units } = getExternalState();
   const { draggingUnit, selectedUnit } = getInternalState();
 
   if (draggingUnit && selectedUnit) {
@@ -916,30 +784,6 @@ function renderingHoveringTile() {
 
 }
 
-function canUnitMoveTo(unit, x, y) {
-
-  const { landTypes, land, gridDimensions } = renderingState;
-
-  const { x: fromX, y: fromY } = unit;
-
-  if (unit.vagrant) {
-    return x == fromX && y == fromY;
-  }
-
-  if (!inBounds(x, y, gridDimensions.width, gridDimensions.height)) return false;
-
-  if(!isAdjescent({ x: fromX, y: fromY }, { x, y })) return false;
-
-  if (unit.engagedUnits.map(engagedUnitId => getUnitById(engagedUnitId)).some(engagedUnit => engagedUnit.x === x && engagedUnit.y === y)) {
-    return false;
-  }
-
-  if (!landTypes[land[y][x]].canWalk) return false;
-
-  return true;
-
-}
-
 function registerMapSurface() {
   registerDraggableSurface((dx, dy) => {
 
@@ -966,7 +810,7 @@ function registerMapSurface() {
 
 function computeQuantityBar() {
 
-  const { shopItems } = renderingState;
+  const { shopItems } = getExternalState();
 
   mutateInternalState(internalState => {
 
@@ -1187,7 +1031,7 @@ function drawQuantityBar() {
 
 function recomputeTerritoryNeighbors() {
 
-  const { territory, gridDimensions } = renderingState;
+  const { territory, gridDimensions } = getExternalState();
   const { width, height } = gridDimensions;
 
   mutateInternalState(state => {
@@ -1251,7 +1095,9 @@ function renderTerritory() {
     ctx.fillRect(x * RenderConstants.CELL_WIDTH, y * RenderConstants.CELL_HEIGHT + RenderConstants.CELL_HEIGHT - RenderConstants.SIDE_SIZE(), RenderConstants.SIDE_SIZE(), RenderConstants.SIDE_SIZE());
   }
 
-  const { players, territory } = renderingState;
+  recomputeTerritoryNeighbors();
+
+  const { players, territory } = getExternalState();
   const { territoryNeighbors } = getInternalState();
 
   territory.forEach((row, y) => {
@@ -1313,7 +1159,7 @@ function renderTerritory() {
 }
 
 function renderSelectStartingPosition() {
-  const { players, gridDimensions, playerId, land } = renderingState;
+  const { players, gridDimensions, playerId, land } = getExternalState();
   const { width, height } = gridDimensions;
 
   for (let x = 0; x < width; x++) {
@@ -1363,7 +1209,9 @@ function renderSelectStartingPosition() {
 
 function renderLand() {
 
-  renderingState.land.forEach((row, y) => {
+  const { land } = getExternalState();
+
+  land.forEach((row, y) => {
     row.forEach((cell, x) => {
 
       let asset = getAsset(cell == "oil" ? "oilTile" : cell);
@@ -1385,7 +1233,8 @@ function renderMainMenu() {
 }
 
 function renderGrid() {
-  const { width, height } = renderingState.gridDimensions;
+  const { gridDimensions } = getExternalState();
+  const { width, height } = gridDimensions;
 
   ctx.strokeStyle = 'black';
   ctx.lineWidth = 1;
@@ -1413,66 +1262,26 @@ function renderDraggingUnit() {
   
   if (quantityBar) {
     let quantityToMove = getQuantityBarAmount();
-    renderSoldier((gameMouseX + draggingUnit.offsetX) / RenderConstants.CELL_WIDTH, (gameMouseY + draggingUnit.offsetY) / RenderConstants.CELL_HEIGHT, quantityToMove, true, getUnitById(selectedUnit).vagrant);
+    renderSoldierAndQuantity({
+      x: gameMouseX + draggingUnit.offsetX,
+      y: gameMouseY + draggingUnit.offsetY,
+      c: getUnitById(selectedUnit).vagrant
+    }, quantityToMove, true);
   }
 
-}
-
-function getSoldierDimensions(padding=RenderConstants.SOLDIER_PADDING) {
-
-  let imgHeight = RenderConstants.CELL_HEIGHT - padding*2;
-  let imgWidth = imgHeight * getAsset("soldier").width / getAsset("soldier").height;
-  
-  return { imgHeight, imgWidth };
 }
 
 function renderUnits() {
 
+  const { units } = getExternalState();
   const { selectedUnit, draggingUnit, quantityBar } = getInternalState();
 
-  renderingState.units.forEach(unit => {
-    let { id, x, y, quantity, fighting, lastQuantity, lastQuantityChange } = unit;
+  units.forEach(unit => {
 
-    let quantityToDisplay = quantity;
-
-    if (selectedUnit && selectedUnit == id && draggingUnit && quantityBar) {
-      quantityToDisplay = quantityBar.max - getQuantityBarAmount();
-    }
-
-    const rect = renderSoldier(x, y, quantityToDisplay, selectedUnit == id, fighting);
-
-    rect.width *= 0.5;
-
-    if (mouseInRect(rect)) {
-
-      handleMouseOverUnit(unit, rect)
-  
-    }
-
-    renderPossibleQuantityChange(unit, rect.x + rect.width, rect.y - rect.height * 0.5, fighting);
+    let rect = renderUnit(unit);
   
   });
 
-}
-
-function renderPossibleQuantityChange(unit, x, y, compact) {
-  const { quantity, lastQuantity, lastQuantityChange } = unit;
-
-  if (lastQuantityChange) {
-
-    let changeInUnits = quantity - lastQuantity;
-
-    let delta = Date.now() - lastQuantityChange;
-
-    let totalTime = 1 * 1000;
-
-    let progress = delta / totalTime;
-
-    if (progress > 1) progress = 1;
-
-    renderChangeNumber(changeInUnits, progress, x, y, compact);
-
-  }
 }
 
 function renderChangeNumber(change, progress, x, y, compact) {
@@ -1497,268 +1306,4 @@ function renderChangeNumber(change, progress, x, y, compact) {
   ctx.fillText(sign + change, x, y - decayingQuantity(yChange, progress) + yChange);
   ctx.globalAlpha = 1;
 
-}
-
-function renderSoldier(x, y, quantity, occilate, compact=false, arrowLabel=null) {
-  let img = getAsset("soldier");
-
-  
-  let imgX;
-  let imgY;
-  let imgWidth;
-  let imgHeight;
-
-  let padding = RenderConstants.SOLDIER_PADDING + RenderConstants.SOLDIER_PADDING * 3 * compact;
-
-  if (ctx.zoom > 0.7 || compact) { 
-    
-    const { imgWidth: renderWidth, imgHeight: renderHeight } = getSoldierDimensions(padding);
-    imgX = x * RenderConstants.CELL_WIDTH + (RenderConstants.CELL_WIDTH - renderWidth) / 2;
-    imgY = y * RenderConstants.CELL_HEIGHT + padding;
-    imgWidth = renderWidth;
-    imgHeight = renderHeight;
-
-    if(occilate) ctx.globalAlpha = sinusoidalTimeValue(0.5, 1, 100);
-    ctx.drawImage(img, imgX, imgY, renderWidth, renderHeight);
-    ctx.globalAlpha = 1;
-
-  } else {
-    let renderHeight = 30;
-    let renderWidth = renderHeight * 430 / img.height;
-    imgX = x * RenderConstants.CELL_WIDTH + (RenderConstants.CELL_WIDTH - renderWidth) / 2;
-    imgY = y * RenderConstants.CELL_HEIGHT + RenderConstants.CELL_HEIGHT - padding - renderHeight;
-    ctx.drawImage(img, imgX, 2 + imgY, renderWidth, renderHeight);
-    ctx.drawImage(img, 15 + imgX, -2 + imgY, renderWidth, renderHeight);
-    ctx.drawImage(img, -10 + imgX, -4 + imgY, renderWidth, renderHeight);
-  }
-
-  
-  let quantitySize = 13 * ctx.zoom;
-
-  if (quantitySize < 16) {
-
-    let quantityX = x * RenderConstants.CELL_WIDTH + RenderConstants.CELL_WIDTH - 20;
-    let quantityY = y * RenderConstants.CELL_HEIGHT + 20;
-
-    if (compact) {
-      quantityX = imgX + imgWidth / 2;
-      quantityY = imgY + imgHeight / 2;
-    }
-
-    let realSize = quantitySize / ctx.zoom + 6;
-
-    if (arrowLabel) {
-      
-      let arrowToX = quantityX;
-      let arrowToY = quantityY;
-
-      if (arrowLabel == "right") {
-        arrowToX += realSize * 0.05;
-        quantityX -= realSize * 0.5;
-      } else if (arrowLabel == "left") {
-        arrowToX -= realSize * 0.05;
-        quantityX += realSize * 0.5;
-      } else if (arrowLabel == "top") {
-        arrowToY -= realSize * 0.05;
-        quantityY += realSize * 0.5;
-      } else if (arrowLabel == "bottom") {
-        arrowToY += realSize * 0.05;
-        quantityY -= realSize * 0.5;
-      }
-
-      drawArrow(quantityX, quantityY, arrowToX, arrowToY, 20, "#404040");
-    } else {
-      ctx.fillStyle = "#404040";
-      ctx.fillCircle(quantityX, quantityY, (quantitySize) / ctx.zoom + 6)
-    }
-
-    ctx.font = Math.floor(quantitySize*1.8) + "px Arial";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-
-    
-    ctx.fillStyle = "white";
-    ctx.fillText(quantity, quantityX, quantityY);
-    
-  } else {
-
-    renderLabel(quantity + " units", imgX + imgWidth/2, y * RenderConstants.CELL_HEIGHT + padding)
-
-  }
-
-  return { x: imgX, y: imgY, width: imgWidth, height: imgHeight };
-}
-
-function drawArrow(fromx, fromy, tox, toy, arrowWidth, color){
-  //variables to be used when creating the arrow
-  var headlen = 10;
-  var angle = Math.atan2(toy-fromy,tox-fromx);
-
-  ctx.abs.save();
-  ctx.strokeStyle = color;
-
-  //starting path of the arrow from the start square to the end square
-  //and drawing the stroke
-  ctx.beginPath();
-  ctx.moveTo(fromx, fromy);
-  ctx.lineTo(tox, toy);
-  ctx.lineWidth = arrowWidth * ctx.zoom;
-  ctx.stroke();
-
-  //starting a new path from the head of the arrow to one of the sides of
-  //the point
-  ctx.beginPath();
-  ctx.moveTo(tox, toy);
-  ctx.lineTo(tox-headlen*Math.cos(angle-Math.PI/7),
-             toy-headlen*Math.sin(angle-Math.PI/7));
-
-  //path from the side point of the arrow, to the other side point
-  ctx.lineTo(tox-headlen*Math.cos(angle+Math.PI/7),
-             toy-headlen*Math.sin(angle+Math.PI/7));
-
-  //path from the side point back to the tip of the arrow, and then
-  //again to the opposite side point
-  ctx.lineTo(tox, toy);
-  ctx.lineTo(tox-headlen*Math.cos(angle-Math.PI/7),
-             toy-headlen*Math.sin(angle-Math.PI/7));
-
-  //draws the paths created above
-  ctx.stroke();
-  ctx.abs.restore();
-}
-
-function handleMouseOverUnit(unit, rect) {
-
-  if (unit.playerId != renderingState.playerId) return;
-
-  const { id } = unit;
-
-  if (mouseClicked) {
-    registerClick(() => {
-      mutateInternalState(state => {
-        state.selectedUnit = id;
-      });
-
-      registerNextUnhandledClickHandler(() => {
-        if (!mouseInRect(rect)) {
-          mutateInternalState(state => {
-            state.selectedUnit = null;
-          });
-        }
-      });
-    });
-  }
-
-  registerDraggableSurface((dx, dy, first) => {
-    mutateInternalState(state => {
-      state.selectedUnit = id;
-
-      if (!state.draggingUnit) {
-        if (!unit.vagrant) {
-          state.draggingUnit = {
-            offsetX: unit.x * RenderConstants.CELL_WIDTH - gameMouseX,
-            offsetY: unit.y * RenderConstants.CELL_HEIGHT - gameMouseY,
-          }
-        } else {
-          state.draggingUnit = {
-            offsetX: -RenderConstants.CELL_WIDTH/2,
-            offsetY: -RenderConstants.CELL_HEIGHT/2,
-          }
-        }
-      }
-    });
-
-    if (first) {
-      registerNextMouseUpHandler(() => {
-        mutateInternalState(state => {
-
-          if (!state.draggingUnit) return;
-
-          const { x: toX, y: toY } = getHoveringTileCoords();
-
-          if (canUnitMoveTo(unit, toX, toY)) {
-
-            let moveAmount = getQuantityBarAmount();
-            
-            if (unit.vagrant) {
-
-              emit(Constants.messages.retreat, {
-                unitId: id,
-                quantity: moveAmount
-              });
-
-            } else {
-              
-              emit(Constants.messages.moveUnits, {
-                from: { x: unit.x, y: unit.y },
-                to: { x: toX, y: toY },
-                quantity: moveAmount
-              });
-
-            }
-
-            if (moveAmount == unit.quantity) state.selectedUnit = null;
-
-          }
-
-          state.draggingUnit = null;
-        });
-      });
-
-      registerNextUnhandledClickHandler(() => {
-        if (!mouseInRect(rect)) {
-          mutateInternalState(state => {
-            state.selectedUnit = null;
-          });
-        }
-      });
-    }
-  });
-
-  const { selectedUnit } = getInternalState();
-
-  if (selectedUnit) {
-    registerScrollableSurface((dy) => {
-      mutateInternalState(state => {
-        let newVal = state.quantityBar.percentage - dy * 0.003;
-
-        if (newVal > 1) newVal = 1;
-        if (newVal < 0) newVal = 0;
-
-        state.quantityBar.percentage = newVal;
-      });
-    });
-  }
-
-}
-
-function renderLabel(text, labelX, labelY) {
-  let fontSize = 8;
-  ctx.fontSize = fontSize;
-  let textWidth = ctx.abs.measureText(text).width / ctx.zoom;
-  let labelPadding = 3;
-  let marginBottom = 0;
-
-  ctx.fillStyle = "#404040";
-  ctx.fillRect(labelX - textWidth/2 - labelPadding, labelY - fontSize - labelPadding - marginBottom, textWidth + labelPadding*2, fontSize + labelPadding*2)
-
-  ctx.textBaseline = "middle";
-  ctx.textAlign = "center";
-  ctx.fillStyle = "white";
-  ctx.fillText(text, labelX, labelY - fontSize/2 - marginBottom);
-}
-
-function getUnitById(unitId) {
-  const { units, vagrantUnits } = renderingState;
-
-  let unit = getById(unitId, units);
-  if (unit) return unit;
-
-  return getById(unitId, vagrantUnits);
-}
-
-function getPlayerById(playerId) {
-  const { players } = renderingState;
-
-  return getById(playerId, players);
 }

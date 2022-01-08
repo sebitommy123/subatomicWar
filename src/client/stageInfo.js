@@ -1,17 +1,26 @@
+import { getExternalState, onStateChange } from "./state";
 
 const stageInfo = document.getElementById('stageInfo');
 const stageInfoText = document.getElementById('stageInfoText');
 
-let stageInfoState = null;
+export function hydrateStageInfo() {
+  onStateChange(() => {
+    updateStageInfo();
+  });
+}
 
-export function updateStageInfo() {
-  if (stageInfoState.screen != "game") {
+setInterval(updateStageInfo, 200);
+
+function updateStageInfo() {
+  const { screen, stage, timeOfStart } = getExternalState();
+
+  if (screen != "game") {
     stageInfo.style.display = "none";
   } else {
-    if (stageInfoState.stage == "pregame") {
+    if (stage == "pregame") {
       stageInfo.style.display = "flex";
 
-      const timeLeft = Math.floor((stageInfoState.timeOfStart - Date.now()) / 1000);
+      const timeLeft = Math.floor((timeOfStart - Date.now()) / 1000);
 
       if (timeLeft > 0) {
         stageInfoText.innerText = "Pick a location to start your commonwealth (" + timeLeft + ").";
@@ -22,9 +31,4 @@ export function updateStageInfo() {
       stageInfo.style.display = "none";
     }
   }
-}
-
-export function setStageInfoState(newState) {
-  stageInfoState = newState;
-  updateStageInfo();
 }

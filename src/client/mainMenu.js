@@ -1,5 +1,6 @@
 import { emit } from './networking';
 import Constants from '../shared/constants';
+import { getExternalState, onStateChange } from './state';
 
 const nameInput = document.getElementById('nameInput');
 const startButton = document.getElementById('startButton');
@@ -15,43 +16,38 @@ let openMenu = null;
 let menus = {
   nameMenu, playMenu, connectingMenu, lobbyMenu
 }
-let menuState;
-
-export function updateMenu(state) {
-
-  menuState = state;
-
-  if (state.screen in menus) {
-    menus[state.screen].classList.add("active");
-    Object.keys(menus).filter(menu => menu != state.screen).forEach(menu => {
-      menus[menu].classList.remove("active");
-    });
-
-    if (state.screen == "playMenu") {
-      if (!state.lobbyAvailable) {
-        joinLobby.disabled = "disabled";
-        joinLobby.innerHTML = "Start game (no lobbies available)";
-      } else {
-        joinLobby.disabled = "";
-        joinLobby.innerHTML = "Start game";
-      }
-    }
-
-    if (state.screen == "lobbyMenu") {
-      lobbyPlayers.innerHTML = `
-        ${state.lobby.players.length} player(s): 
-        ${state.lobby.players.join(", ")}
-      `;
-    }
-  } else {
-    Object.keys(menus).forEach(menu => {
-      menus[menu].classList.remove("active");
-    });
-  }
-
-}
 
 export function addMainMenuHandlers() {
+
+  onStateChange(state => {
+    if (state.screen in menus) {
+      menus[state.screen].classList.add("active");
+      Object.keys(menus).filter(menu => menu != state.screen).forEach(menu => {
+        menus[menu].classList.remove("active");
+      });
+
+      if (state.screen == "playMenu") {
+        if (!state.lobbyAvailable) {
+          joinLobby.disabled = "disabled";
+          joinLobby.innerHTML = "Start game (no lobbies available)";
+        } else {
+          joinLobby.disabled = "";
+          joinLobby.innerHTML = "Start game";
+        }
+      }
+
+      if (state.screen == "lobbyMenu") {
+        lobbyPlayers.innerHTML = `
+          ${state.lobby.players.length} player(s): 
+          ${state.lobby.players.join(", ")}
+        `;
+      }
+    } else {
+      Object.keys(menus).forEach(menu => {
+        menus[menu].classList.remove("active");
+      });
+    }
+  });
   
   function chooseName() {
   
@@ -65,8 +61,11 @@ export function addMainMenuHandlers() {
   });
 
   joinLobby.onclick = () => {
-    if (menuState.lobbyAvailable) {
-      emit(Constants.messages.joinLobby, {lobbyId: menuState.lobbyAvailable});
+
+    const { lobbyAvailable } = getExternalState();
+
+    if (lobbyAvailable) {
+      emit(Constants.messages.joinLobby, {lobbyId: lobbyAvailable});
     }
   }
 

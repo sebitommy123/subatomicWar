@@ -4,7 +4,7 @@ import io from 'socket.io-client';
 import { throttle } from 'throttle-debounce';
 import Constants from '../shared/constants';
 import { handleNewState } from './state';
-import { displayError } from './utils';
+import { displayError } from './utils/display';
 
 const socketProtocol = (window.location.protocol.includes('https')) ? 'wss' : 'ws';
 const socket = io(`${socketProtocol}://${window.location.host}`, { reconnection: false });
