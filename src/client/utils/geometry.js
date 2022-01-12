@@ -73,7 +73,7 @@ export function getTerritoryDirFrom(territory, x, y, dir) {
     return null;
   }
 
-  return getTerritoryAt(territory, x, y);
+  return getTerritoryAt(x, y);
 }
 
 export function getDirectionFromPosToPos(x1, y1, x2, y2) {

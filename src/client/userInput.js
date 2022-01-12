@@ -1,4 +1,5 @@
 import { canvas, ctx, RenderConstants } from "./render";
+import { stopAllPlacing } from "./render/placing";
 import { mutateInternalState } from "./state";
 
 export let dragging = false;
@@ -40,20 +41,6 @@ function handleKeyDown(evt) {
 
 }
 
-export function stopAllPlacing() {
-  mutateInternalState(state => {
-    state.draggingUnit = null;
-    state.buyingUnit = null;
-    state.selectedUnit = null;
-    state.buyingBuilding = null;
-    state.buyingCity = false;
-    state.buyingStructure = null;
-    state.deletingObject = null;
-
-    forceStopDrag();
-  });
-}
-
 function handleMouseDown(evt) {
   dragging = true;
   realDrag = false;
@@ -89,7 +76,7 @@ function handleMouseMove(evt) {
   gameMouseY = ctx.canvasCoordsToGameY(mouseY);
 }
 
-function forceStopDrag() {
+export function forceStopDrag() {
 
   dragging = false;
   realDrag = false;

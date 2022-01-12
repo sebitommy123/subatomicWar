@@ -1,11 +1,5 @@
-import { getInternalState, onStateChange } from "../state";
+import { getExternalState, getInternalState, onStateChange } from "../state";
 import { getMe } from "./game";
-
-export function getQuantityBarAmount() {
-  const { quantityBar } = getInternalState();
-
-  return Math.max(1, Math.floor(quantityBar.percentage * quantityBar.max));
-}
 
 export function getDayTime(start, end) {
 
@@ -28,7 +22,9 @@ export function getDayTime(start, end) {
 
 }
 
-export function getMaxUnitPurchase(shopItems) {
+export function getMaxUnitPurchase() {
+  const { shopItems } = getExternalState();
+
   return Math.floor(getMe().gold / shopItems.find(s => s.type == "unit").cost.gold);
 }
 
@@ -38,6 +34,22 @@ export function multiplyCost(cost, quantity) {
     wood: cost.wood ? cost.wood * quantity : null,
     oil: cost.oil ? cost.oil * quantity : null,
   }
+}
+
+export function ceilCost(cost) {
+  return {
+    gold: cost.gold ? Math.ceil(cost.gold) : null,
+    wood: cost.wood ? Math.ceil(cost.wood) : null,
+    oil: cost.oil ? Math.ceil(cost.oil) : null,
+  }
+}
+
+export function costIsZero(cost) {
+  if (cost.gold && cost.gold > 0) return false;
+  if (cost.wood && cost.wood > 0) return false;
+  if (cost.oil && cost.oil > 0) return false;
+
+  return true;
 }
 
 export function getQuantityBarPurchaseCost(shopItems) {
@@ -50,6 +62,10 @@ export function canBuyResource(cost, resources) {
   return Object.keys(cost).every(resource => resources[resource] >= cost[resource]);
 }
 
+export function canBuy(cost) {
+  return canBuyResource(cost, getResources());
+}
+
 export function getResources() {
   return {
     gold: getMe().gold,
@@ -59,6 +75,12 @@ export function getResources() {
 }
 
 export function inBounds(x, y, maxX, maxY) {
+
+  const { gridDimensions } = getExternalState();
+
+  if (!maxX) maxX = gridDimensions.width;
+  if (!maxY) maxY = gridDimensions.height;
+
   return x >= 0 && x < maxX && y >= 0 && y < maxY;
 }
 
@@ -80,5 +102,17 @@ export function ensureServerSync() {
       }
     }
   });
+
+}
+
+export function doesBlacklistAllow(blacklist, land) {
+
+  let data = blacklist[land];
+
+  if (data) {
+    return data.allowed;
+  }
+
+  return true;
 
 }

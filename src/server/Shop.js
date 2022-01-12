@@ -167,6 +167,8 @@ class Shop {
 
       if (this.game.territory[y][x] !== player.id) return;
 
+      if (!this.game.getCityAtPosition(x, y)) return;
+
       // TODO: Factor in oil
       
       let costNow = this.multiplyCost(item.cost, quantity);
@@ -224,7 +226,7 @@ class Shop {
         desert: { allowed: true, efficiency: 0.5 },
         plains: { allowed: true },
         forest: { allowed: true },
-        mountains: { allowed: true, efficiency: 1.5 },
+        mountains: { allowed: true, efficiency: 1.4 },
         oil: { allowed: false },
       },
       tags: [],

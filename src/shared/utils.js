@@ -75,9 +75,16 @@ function getAuraPositions(cityPositions) {
 
 function positionInPositionList(position, positionList) {
 
-  return positionList.some(positionInList => positionInList.x == position.x && positionInList.y == position.y);
+  return !!getPositionInPositionList(position, positionList);
   
 }
+
+function getPositionInPositionList(position, positionList) {
+
+  return positionList.find(positionInList => positionInList.x == position.x && positionInList.y == position.y);
+  
+}
+
 
 function resolveTerritoryBlacklist(blacklist, tile) {
 
@@ -97,6 +104,7 @@ module.exports = {
   isIsolatedPosition,
   getAuraPositions,
   positionInPositionList,
+  getPositionInPositionList,
   resolveTerritoryBlacklist,
   getRingPositions
 }

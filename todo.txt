@@ -1,15 +1,15 @@
 
 DONE
  - unify client state
-
-TODO
- - split render up
  - animate buildings giving you resources
- - scrolling is too harsh
  - effectiveness of gold mines down to 1.4 on mountains
  - placing buildings should highlight valid placing locations in gold (city auras)
  - placing cities should highlight valid placing locations
  - only allow placing soldiers on cities, barracks or airports
+
+TODO
+ - split render up
+ - scrolling is too harsh on mouse
  - buildings cost gold
  - add right click menu
  - add cursor becoming a pointer when you can click, add more hover animations
@@ -33,6 +33,8 @@ TODO
  - separate server into two
  - show name of empire somewhere
  - show soldier alliegance somewhere
+ - make sure cities don't randomly spawn in ocean
+ - unit move speeds: faster on your territory, neutral in nomansland, slow when invading into enemy
  
 Future updates:
  - Military industrial complex

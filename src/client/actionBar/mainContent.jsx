@@ -1,9 +1,18 @@
 import React from 'react'
+import Constants from '../../shared/constants';
+import { getAsset } from '../assets';
+import { emit } from '../networking';
+import { setPlacing } from '../render/placing';
+import { drawAllCityAuras, drawAuraAt, drawBuilding } from '../render/property';
+import { renderSoldierAndQuantity } from '../render/soldier';
 import { mutateInternalState } from '../state';
-import { stopAllPlacing } from '../userInput';
+import { getQuantityAtPosition, getUnitAtPosition, ownedUnitAtPosition } from '../utils/game';
+import { getMaxUnitPurchase, multiplyCost } from '../utils/general';
+import { positionCenteredAt } from '../utils/geometry';
+import { getValidTilesPlaceBuilding, getValidTilesPlaceCity, getValidTilesPlaceStructure, getValidTilesPlaceUnit } from '../utils/tileValidation';
 import styles from './mainContent.module.css';
 
-function Item({ id, name, imageSrc, cost, type, description }) {
+function Item({ id, name, imageSrc, asset, cost, type, description, objectType }) {
 
   let resourceTypes = {
     gold: "./assets/gold.png",
@@ -12,21 +21,54 @@ function Item({ id, name, imageSrc, cost, type, description }) {
 
   function handleClick() {
 
-    mutateInternalState(state => {
-      if (type == "unit") {
-        stopAllPlacing();
-        state.buyingUnit = true;
-      } else if (type == "building") {
-        stopAllPlacing();
-        state.buyingBuilding = id;
-      } else if (type == "city") {
-        stopAllPlacing();
-        state.buyingCity = true;
-      } else if (type == "structure") {
-        stopAllPlacing();
-        state.buyingStructure = id;
+    const assetObj = getAsset(asset.split(".")[0]);
+
+    const onPlace = (x, y, quantity) => {
+      emit(Constants.messages.buyFromShop, {
+        itemId: id,
+        quantity: quantity,
+        x,
+        y
+      });
+    };
+
+    const canPlace = (x, y, quantity) => {
+      if (type == "unit") return getValidTilesPlaceUnit(objectType);
+      if (type == "structure") return getValidTilesPlaceStructure(objectType);
+      if (type == "building") return getValidTilesPlaceBuilding(objectType);
+      if (type == "city") return getValidTilesPlaceCity(objectType);
+    };
+
+    if (type == "unit") {
+      setPlacing("unit", id, cost, (x, y, quantity) => renderSoldierAndQuantity({ ...positionCenteredAt(x, y), c: 0 }, quantity + getQuantityAtPosition(x, y), true), canPlace, onPlace, {
+        tag: "buyingUnit", 
+        max: getMaxUnitPurchase, 
+        tip: (quantity) => [
+          `BUYING UNITS`,
+          `Units to buy: ${quantity}`,
+          `Cost: ${multiplyCost(cost, quantity).gold}`,
+          `Click on tile to buy`
+        ],
+        color: "#adad47",
+        units: "units",
+      });
+    } else {
+
+      let renderFunc = (x, y) => drawBuilding(assetObj, x, y);
+
+      if (type === "city") {
+        renderFunc = (x, y) => {
+          drawAuraAt(x, y);
+          drawAllCityAuras();
+
+          return drawBuilding(assetObj, x, y);
+        }
       }
-    });
+
+      setPlacing(type, id, cost, renderFunc, canPlace, onPlace, null, {
+        hideAfter: type != "structure",
+      });
+    }
 
   }
 
@@ -69,7 +111,7 @@ function MainContent({shopItems}) {
   return (
     <div className={styles.mainContent}>
       {shopItems.map(item =>  {
-        return <Item key={item.id} id={item.id} name={item.name} type={item.type} description={item.desc} imageSrc={"./assets/" + item.image} cost={item.cost}/>
+        return <Item key={item.id} id={item.id} name={item.name} type={item.type} description={item.desc} imageSrc={"./assets/" + item.image} asset={item.image} cost={item.cost} objectType={item}/>
       })}
     </div>
   )

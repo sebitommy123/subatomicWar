@@ -1,4 +1,4 @@
-import { isAdjescent } from "../../shared/utils";
+import { getRingPositions, isAdjescent } from "../../shared/utils";
 import { getExternalState } from "../state";
 import { inBounds } from "./general";
 
@@ -28,12 +28,24 @@ export function getMe() {
   return getById(playerId, players);
 }
 
-export function getTerritoryAt(territory, x, y) {
+export function getTerritoryAt(x, y) {
+  const { territory } = getExternalState();
+
   if (x < 0 || x >= territory.length || y < 0 || y >= territory[0].length) {
     return null;
   }
   
   return territory[y][x];
+}
+
+export function isFriendlyTerritory(x, y, pid) {
+
+  const { playerId } = getExternalState();
+
+  if (pid == null) pid = playerId;
+
+  return getTerritoryAt(x, y) == pid;
+
 }
 
 export function enemyUnitAtPosition(x, y, pid=null) {
@@ -99,5 +111,109 @@ export function getLandEfficiency(x, y, type) {
   }
 
   return 1;
+
+}
+
+export function getQuantityAtPosition(x, y) {
+  const unit = getUnitAtPosition(x, y);
+
+  if (!unit) return 0;
+
+  return unit.quantity;
+}
+
+export function filterAllPositions(func) {
+
+  const { gridDimensions } = getExternalState();
+
+  let result = [];
+
+  for (let x = 0; x < gridDimensions.width; x++) {
+    for (let y = 0; y < gridDimensions.height; y++) {
+
+      if (func(x, y)) {
+        result.push({x, y});
+      }
+
+    }
+  }
+
+  return result;
+
+}
+
+export function getBuildingAtPosition(x, y) {
+
+  const { buildings } = getExternalState();
+
+  return buildings.find(building => building.x == x && building.y == y);
+
+}
+
+export function getCityAtPosition(x, y) {
+
+  const { cities } = getExternalState();
+
+  return cities.find(city => city.x == x && city.y == y);
+
+}
+
+export function getStructureAtPosition(x, y) {
+
+  const { structures } = getExternalState();
+
+  return structures.find(structure => structure.x == x && structure.y == y);
+
+}
+
+
+
+export function anythingAtPos(x, y) {
+
+  if(getBuildingAtPosition(x, y)) return true;
+
+  if(getCityAtPosition(x, y)) return true;
+
+  if(getStructureAtPosition(x, y)) return true;
+
+  return false;
+
+}
+
+export function fightingOccuringAt(x, y) {
+
+  let unit = getUnitAtPosition(x, y);
+
+  if (!unit) return false;
+
+  return unit.fighting;
+
+}
+
+export function getCityAuraAtPosition(x, y) {
+
+  const { cities } = getExternalState();
+
+  return cities.find(city => {
+
+    if (city.x == x && city.y == y) return false; //a city is not in its own aura
+
+    return Math.abs(city.x - x) <= 1 && Math.abs(city.y - y) <= 1;
+
+  });
+
+}
+
+export function getLandTypeAtPosition(x, y) {
+
+  const { landTypes } = getExternalState();
+
+  return landTypes[getLandAt(x, y)];
+
+}
+
+export function canWalkOnPosition(x, y) {
+
+  return getLandTypeAtPosition(x, y).canWalk;
 
 }

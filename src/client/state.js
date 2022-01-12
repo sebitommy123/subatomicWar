@@ -2,17 +2,13 @@ let state = null;
 let stateHooks = [];
 let internalStateHooks = [];
 let internalState = {
-  quantityBar: null,
-  savedQuantityPercentages: {
-    unit: 0.5,
-    buying: 0.5,
+  quantityBar: {
+    savedQuantityPercentages: {},
+    currentQuantityBar: null,
+    currentPercentage: null
   },
-  selectedUnit: null,
-  draggingUnit: null,
-  buyingUnit: false,
-  buyingCity: false,
-  buyingBuilding: null,
-  buyingStructure: null,
+  movingObject: null,
+  placingObject: null,
   deletingObject: null,
 };
 let me;
@@ -48,3 +44,4 @@ export function handleNewState(newState) {
 
   stateHooks.forEach(hook => hook(state, oldState));
 }
+

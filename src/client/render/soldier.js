@@ -4,10 +4,13 @@ import { emit } from "../networking";
 import { RenderConstants, ctx } from "../render";
 import { getExternalState, getInternalState, mutateInternalState } from "../state";
 import { gameMouseX, gameMouseY, mouseClicked, registerClick, registerDraggableSurface, registerNextMouseUpHandler, registerNextUnhandledClickHandler, registerScrollableSurface } from "../userInput";
-import { canUnitMoveTo, enemyUnitAtPosition, getUnitAtPosition, ownedUnitAtPosition } from "../utils/game";
-import { getQuantityBarAmount } from "../utils/general";
+import { getFreeCost } from "../utils/cost";
+import { canUnitMoveTo, enemyUnitAtPosition, getQuantityAtPosition, getUnitAtPosition, getUnitById } from "../utils/game";
 import { getDirectionFromPosToPos, getHoveringTileCoords, mouseInRect, movePositionInDir, positionCenteredAt } from "../utils/geometry";
 import { decayingQuantity, interpolateXYC, sinusoidalTimeValue } from "../utils/math";
+import { getValidTilesMoveUnit } from "../utils/tileValidation";
+import { setPlacing } from "./placing";
+import { getQuantityBarQuantity } from "./quantityBar";
 
 function getUnitStart(unitData) {
 
@@ -61,13 +64,14 @@ function getUnitGoal(unitData) {
 }
 
 export function renderSoldierAndQuantity(posXYC, quantity, occilate=false, changeInUnits=0, changeInUnitsProgress=1, dir) {
+
   let rect = renderSoldier(posXYC, occilate);
 
   let fontSize = 8 - 3 * posXYC.c;
 
   let descriptor = " units";
   let lx = rect.x + rect.width/2;
-  let ly = rect.y - 5;
+  let ly = rect.y + 2;
 
   if (posXYC.c === 0) {
     if (ctx.zoom <= 2) fontSize = 12;
@@ -194,7 +198,7 @@ export function renderVagrantUnit(unit) {
   let occilate = false;
 
   if (selectedUnit && selectedUnit == unit.id) {
-    if (draggingUnit && quantityBar) quantityToDisplay = quantityBar.max - getQuantityBarAmount();
+    if (draggingUnit && quantityBar) quantityToDisplay = quantityBar.max - getQuantityBarQuantity();
     occilate = true;
   }
 
@@ -214,7 +218,7 @@ export function renderUnit(unit) {
 
   if (unit.vagrant) return;
 
-  const { selectedUnit, draggingUnit, quantityBar } = getInternalState();
+  const { selectedUnit, movingObject } = getInternalState();
 
   let { id, x, y, quantity, playerId, fighting, vagrant, lastQuantity, lastQuantityChange } = unit;
 
@@ -235,6 +239,13 @@ export function renderUnit(unit) {
 
   }
 
+  let renderQuantity = quantity;
+
+  
+  if (movingObject && movingObject.type == "unit" && movingObject.id == unit.id) {
+    renderQuantity = quantity - getQuantityBarQuantity();
+  }
+
   let rect = renderSoldierAndQuantity(getUnitGoal({
     playerId, 
     fromX: null, 
@@ -243,7 +254,7 @@ export function renderUnit(unit) {
     toY: y, 
     fighting, 
     vagrant
-  }), quantity, selectedUnit==id, changeInUnits, changeInUnitsProgress);
+  }), renderQuantity, renderQuantity != quantity, changeInUnits, changeInUnitsProgress);
 
   rect.width *= 0.5;
 
@@ -257,6 +268,88 @@ export function renderUnit(unit) {
 
 }
 
+function renderPlacingUnit(x, y, quantity) {
+
+  const { movingObject } = getInternalState();
+
+  const unit = getUnitById(movingObject.id);
+
+  if (!unit) return;
+
+  let renderQuantity = quantity + getQuantityAtPosition(x, y);
+
+  let pos = positionCenteredAt(x, y);
+
+  if (x == unit.x && y == unit.y) {
+    pos = { x: gameMouseX, y: gameMouseY };
+    renderQuantity = quantity;
+  }
+
+  return renderSoldierAndQuantity({ ...pos, c: 0 }, renderQuantity, true)
+}
+
+function canMoveUnitFrom(x, y) {
+
+  const { movingObject } = getInternalState();
+
+  const unit = getUnitById(movingObject.id);
+
+  if (!unit) return;
+
+  return getValidTilesMoveUnit(unit.x, unit.y);
+}
+
+function moveUnitTo(x, y, quantity) {
+
+  const { movingObject } = getInternalState();
+
+  const unit = getUnitById(movingObject.id);
+
+  if (!unit) return;
+  
+  if (unit.vagrant) {
+
+    emit(Constants.messages.retreat, {
+      unitId: unit.id,
+      quantity,
+    });
+
+  } else {
+    
+    emit(Constants.messages.moveUnits, {
+      from: { x: unit.x, y: unit.y },
+      to: { x, y },
+      quantity,
+    });
+
+  }  
+
+}
+
+function handleUnitStartMoving(unit) {
+  setPlacing("unit", unit.id, getFreeCost(), renderPlacingUnit, canMoveUnitFrom, moveUnitTo, {
+    tag: "movingUnit", 
+    max: () => getUnitById(unit.id).quantity, 
+    tip: (quantity) => [
+      `MOVING UNITS`,
+      `Units to move: ${quantity}`,
+      `Units left: ${getUnitById(unit.id).quantity - quantity}`,
+      `Click on tile to move`
+    ],
+    color: "#70AD47", 
+    units: "units",
+  }, {
+    hideAfter: true,
+  });
+  
+  mutateInternalState(state => {
+    state.movingObject = {
+      type: "unit",
+      id: unit.id
+    }
+  });
+}
+
 function handleMouseOverUnit(unit, rect) {
 
   const { playerId } = getExternalState();
@@ -267,76 +360,17 @@ function handleMouseOverUnit(unit, rect) {
 
   if (mouseClicked) {
     registerClick(() => {
-      mutateInternalState(state => {
-        state.selectedUnit = id;
-      });
 
-      registerNextUnhandledClickHandler(() => {
-        if (!mouseInRect(rect)) {
-          mutateInternalState(state => {
-            state.selectedUnit = null;
-          });
-        }
-      });
+      handleUnitStartMoving(unit);
+      
     });
   }
 
   registerDraggableSurface((dx, dy, first) => {
-    mutateInternalState(state => {
-      state.selectedUnit = id;
-
-      if (!state.draggingUnit) {
-        state.draggingUnit = {
-          offsetX: rect.rx - gameMouseX,
-          offsetY: rect.ry - gameMouseY,
-        }
-      }
-    });
-
     if (first) {
-      registerNextMouseUpHandler(() => {
-        mutateInternalState(state => {
 
-          if (!state.draggingUnit) return;
+      handleUnitStartMoving(unit);
 
-          const { x: toX, y: toY } = getHoveringTileCoords();
-
-          if (canUnitMoveTo(unit, toX, toY)) {
-
-            let moveAmount = getQuantityBarAmount();
-            
-            if (unit.vagrant) {
-
-              emit(Constants.messages.retreat, {
-                unitId: id,
-                quantity: moveAmount
-              });
-
-            } else {
-              
-              emit(Constants.messages.moveUnits, {
-                from: { x: unit.x, y: unit.y },
-                to: { x: toX, y: toY },
-                quantity: moveAmount
-              });
-
-            }
-
-            if (moveAmount == unit.quantity) state.selectedUnit = null;
-
-          }
-
-          state.draggingUnit = null;
-        });
-      });
-
-      registerNextUnhandledClickHandler(() => {
-        if (!mouseInRect(rect)) {
-          mutateInternalState(state => {
-            state.selectedUnit = null;
-          });
-        }
-      });
     }
   });
 
