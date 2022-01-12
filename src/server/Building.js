@@ -64,6 +64,12 @@ class Building {
 
       p.pay(resourceYield);
 
+      let unitYield = Math.floor(this.type.unitYield * this.getLandEfficiency());
+
+      if (unitYield > 0) {
+        this.game.addUnitsAnimating(this.x, this.y, unitYield);
+      }
+
       this.getCity().foodThisTick += this.type.food;
 
     }

@@ -158,9 +158,16 @@ export function renderPlacingObject() {
     registerScrollableSurface((dy) => {
       mutateInternalState(state => {
 
-        if (state.quantityBar.currentPercentage) {
+        if (state.quantityBar.currentPercentage != null) {
 
-          let newVal = state.quantityBar.currentPercentage - dy * 0.003;
+          let change = dy * 0.003;
+
+          if (change > 0.1) change = 0.1;
+          if (change < -0.1) change = -0.1;
+
+          console.log(change);
+
+          let newVal = state.quantityBar.currentPercentage - change;
 
           if (newVal > 1) newVal = 1;
           if (newVal < 0) newVal = 0;

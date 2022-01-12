@@ -258,7 +258,7 @@ export function renderUnit(unit) {
 
   rect.width *= 0.5;
 
-  if (mouseInRect(rect)) {
+  if (mouseInRect(rect) && renderQuantity == quantity) {
 
     handleMouseOverUnit(unit, rect);
 
@@ -373,20 +373,5 @@ function handleMouseOverUnit(unit, rect) {
 
     }
   });
-
-  const { selectedUnit } = getInternalState();
-
-  if (selectedUnit) {
-    registerScrollableSurface((dy) => {
-      mutateInternalState(state => {
-        let newVal = state.quantityBar.percentage - dy * 0.003;
-
-        if (newVal > 1) newVal = 1;
-        if (newVal < 0) newVal = 0;
-
-        state.quantityBar.percentage = newVal;
-      });
-    });
-  }
 
 }

@@ -15,7 +15,7 @@ export function setQuantityBar(quantityBarConfig) {
     if (!tag) return;
 
     state.quantityBar.currentQuantityBar = quantityBarConfig; // tag, max, tip, color, units
-    if (!state.quantityBar.savedQuantityPercentages[tag]) {
+    if (state.quantityBar.savedQuantityPercentages[tag] == null) {
       state.quantityBar.savedQuantityPercentages[tag] = 0.5;
     }
     state.quantityBar.currentPercentage = state.quantityBar.savedQuantityPercentages[tag];

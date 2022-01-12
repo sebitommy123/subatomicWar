@@ -180,14 +180,7 @@ class Shop {
 
       player.pay(costNow);
 
-      let existingUnit = this.game.getUnitAtPosition(x, y);
-
-      if (existingUnit) {
-        existingUnit.setQuantityAnimating(existingUnit.quantity + quantity);
-      } else {
-        let newUnit = new Unit(this.game, player, x, y, quantity);
-        this.game.units.push(newUnit);
-      }
+      this.game.addUnitsAnimating(x, y, quantity);
 
       this.game.sendSyncUpdate();
 
@@ -293,12 +286,30 @@ class Shop {
     });
 
     this.addItem({
+      name: "Barracks",
+      desc: "Trains 3 units per turn",
+      cost: { wood: 130 },
+      image: "barracks.png",
+      type: "building",
+      resourceYield: {},
+      food: 0,
+      combat: {},
+      unitYield: 3,
+      blacklist: {
+        water: { allowed: false },
+        mountains: { allowed: false },
+        oil: { allowed: false },
+      },
+      tags: [],
+    });
+
+    this.addItem({
       name: "City",
       desc: "Settle a new city",
       cost: { wood: 100, gold: 100 },
       image: "city.png",
       type: "city",
-      resourceYield: {},
+      resourceYield: { gold: 5, wood: 5 },
       food: 0,
       combat: { attack: 1.5, defense: 1.5 },
       blacklist: {
@@ -329,11 +340,13 @@ class Shop {
 
   addItem(item) {
 
-    const { name, cost, image, type, desc, blacklist, resourceYield, food, combat } = item;
+    let { name, cost, image, type, desc, blacklist, resourceYield, food, combat, unitYield } = item;
+
+    if (!unitYield) unitYield = 0;
 
     this.items.push({
       id: nanoid(),
-      name, cost, image, type, desc, blacklist, resourceYield, food, combat
+      name, cost, image, type, desc, blacklist, resourceYield, food, combat, unitYield
     });
 
   }

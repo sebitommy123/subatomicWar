@@ -417,6 +417,19 @@ class Game {
     return unitAtPos && unitAtPos.fighting;
   }
 
+  addUnitsAnimating(x, y, quantity) {
+
+    let existingUnit = this.getUnitAtPosition(x, y);
+
+    if (existingUnit) {
+      existingUnit.setQuantityAnimating(existingUnit.quantity + quantity);
+    } else {
+      let newUnit = new Unit(this, this.getPlayerAtPosition(x, y), x, y, quantity);
+      this.units.push(newUnit);
+    }
+
+  }
+
   setStateAll(updateFunc) {
       
     this.players.forEach(player => {
