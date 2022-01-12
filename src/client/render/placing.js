@@ -165,8 +165,6 @@ export function renderPlacingObject() {
           if (change > 0.1) change = 0.1;
           if (change < -0.1) change = -0.1;
 
-          console.log(change);
-
           let newVal = state.quantityBar.currentPercentage - change;
 
           if (newVal > 1) newVal = 1;
