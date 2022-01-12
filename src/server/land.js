@@ -99,7 +99,7 @@ function generateRandomLand(width, height) {
     let y = Math.floor(Math.random() * height);
 
     // put oil
-    land[y][x] = "oil";
+    //land[y][x] = "oil";
   }
 
   // calculate middle position
