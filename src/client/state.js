@@ -7,6 +7,7 @@ let internalState = {
     currentQuantityBar: null,
     currentPercentage: null
   },
+  contextMenu: null,
   movingObject: null,
   placingObject: null,
   deletingObject: null,

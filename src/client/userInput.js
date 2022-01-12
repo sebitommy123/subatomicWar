@@ -18,12 +18,16 @@ export let gameMouseY = 0;
 
 export let mouseDown = false;
 export let mouseClicked = false;
+export let mouseRightDown = false;
+export let mouseRightClicked = false;
 
 export function addUserInputHandlers() {
 
   canvas.addEventListener('mousedown', handleMouseDown);
   canvas.addEventListener('mousemove', handleMouseMove);
   canvas.addEventListener('mouseup', handleMouseUp);
+
+  canvas.addEventListener('contextmenu', evt => evt.preventDefault());
 
   canvas.addEventListener('wheel', handleWheel);
 
@@ -42,13 +46,22 @@ function handleKeyDown(evt) {
 }
 
 function handleMouseDown(evt) {
-  dragging = true;
-  realDrag = false;
-  dragLastPosition = { x: evt.offsetX, y: evt.offsetY };
-  dragStart = { x: evt.offsetX, y: evt.offsetY };
-  currentDragHandler = dragHandler || (() => {});
 
-  mouseDown = true;
+  if (evt.button == 0) {
+
+    dragging = true;
+    realDrag = false;
+    dragLastPosition = { x: evt.offsetX, y: evt.offsetY };
+    dragStart = { x: evt.offsetX, y: evt.offsetY };
+    currentDragHandler = dragHandler || (() => {});
+
+    mouseDown = true;
+
+  } else if (evt.button == 2) {
+
+    mouseRightDown = true;
+
+  }
 }
 
 function handleMouseMove(evt) {
@@ -84,14 +97,19 @@ export function forceStopDrag() {
 }
 
 function handleMouseUp() {
-  if (!realDrag) {
+  if (!realDrag && mouseDown) {
     mouseClicked = true;
+  }
+
+  if (mouseRightDown) {
+    mouseRightClicked = true;
   }
 
   dragging = false;
   realDrag = false;
 
   mouseDown = false;
+  mouseRightDown = false;
 
   nextMouseUp.forEach(handler => handler());
   nextMouseUp = [];
@@ -163,6 +181,7 @@ export function tickEnd() {
   }
   
   mouseClicked = false;
+  mouseRightClicked = false;
 }
 
 export function tileMouseX() {

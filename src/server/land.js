@@ -110,7 +110,7 @@ function generateRandomLand(width, height) {
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
       if (Math.abs(x - middleX) + Math.abs(y - middleY) < 3) {
-        land[y][x] = "water";
+        //land[y][x] = "water";
       }
     }
   }

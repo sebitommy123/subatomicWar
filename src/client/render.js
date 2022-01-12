@@ -16,12 +16,13 @@ import { getAdjescentPositions, getAuraPositions, getRingPositions, isAdjescent,
 import { decayingQuantity, sinusoidalTimeValue } from './utils/math';
 import { displayError } from './utils/display';
 import { getHoveringTileCoords, mouseInLastCircle, mouseInRect, pointInRect, flipNeighborList, clockwiseDir, getTerritoryDirFrom, getTerritoryDirPositionFrom, getDirectionFromPosToPos, positionCenteredAt } from './utils/geometry';
-import { getMe, getUnitById, getById, canUnitMoveTo, getBuildingAtPosition, anythingAtPos } from './utils/game';
+import { getMe, getUnitById, getById, canUnitMoveTo, getBuildingAtPosition, anythingAtPos, isFriendlyTerritory } from './utils/game';
 import { renderSoldier, renderSoldierAndQuantity, renderUnit, renderVagrantUnit } from './render/soldier';
 import { renderProperty } from './render/property';
 import { renderBuiltNode } from './render/builtNode';
 import { isPlacingUnit, renderPlacingObject, stopAllPlacing } from './render/placing';
 import { computeQuantityBar, drawQuantityBar } from './render/quantityBar';
+import { renderContextMenu } from './render/contextMenu';
 
 let animationTickCounter = 0;
 let animationTick = 0;
@@ -95,20 +96,14 @@ function render() {
       renderBuildings();
       renderStructures();
 
-      renderingHoveringTile();
-
       renderUnits();
       renderVagrantUnits();
 
       renderPlacingObject();
-
-      // renderPurchasingUnit();
-      // renderPurchasingBuilding();
-      // renderPurchasingCity();
-      // renderPurchasingStructure();
     }
 
     renderEscapeMessage();
+    renderContextMenu();
 
     drawQuantityBar();
   }
@@ -204,298 +199,6 @@ export function renderCost(cost, x, y) {
 
 }
 
-function renderPurchasingCity() {
-
-  const { land, shopItems, cities, units, playerId, territory, gridDimensions } = getExternalState();
-  const { buyingCity } = getInternalState();
-  
-  if (!buyingCity) return;
-
-  let tileX = tileMouseX();
-  let tileY = tileMouseY();
-
-  if (!inBounds(tileX, tileY, gridDimensions.width, gridDimensions.height)) return;
-
-  let itemBuying = shopItems.find(item => item.type == "city");
-
-  let canBuy = canBuyResource(itemBuying.cost, getResources());
-
-  let unitAtPos = units.find(unit => unit.playerId == playerId && unit.x == tileX && unit.y == tileY);
-  if (unitAtPos && unitAtPos.fighting) canBuy = false;
-
-  let isIsolated = isIsolatedPosition({x: tileX, y: tileY}, cities.map(city => ({x: city.x, y: city.y})));
-  if (!isIsolated) canBuy = false;
-  
-  if (territory[tileY][tileX] !== playerId) canBuy = false;
-
-  const { allowed } = resolveTerritoryBlacklist(itemBuying.blacklist, land[tileY][tileX]);
-  if (!allowed) canBuy = false;
-
-  if (mouseClicked) {
-    registerClick(() => {
-
-      emit(Constants.messages.buyFromShop, {
-        itemId: itemBuying.id,
-        x: tileX,
-        y: tileY
-      });
-
-      mutateInternalState(state => {
-        state.buyingCity = null;
-      });
-  
-    });
-  }
-  
-  ctx.globalAlpha = 0.3;
-  ctx.fillStyle = "green";
-
-  if (!canBuy) ctx.fillStyle = "red";
-
-  ctx.fillRect(tileX * RenderConstants.CELL_WIDTH, tileY * RenderConstants.CELL_HEIGHT, RenderConstants.CELL_WIDTH, RenderConstants.CELL_HEIGHT);
-  ctx.globalAlpha = 1;
-
-  let asset = getAsset("city");
-
-  let rect = drawBuilding(asset, tileX, tileY);
-
-  ctx.globalAlpha = 0.9;
-  renderCost(itemBuying.cost, rect.x + rect.width/2, rect.y + rect.height * 0.7);
-  ctx.globalAlpha = 1;
-
-}
-
-function renderPurchasingBuilding() {
-
-  const { land, shopItems, buildings, cities, units, playerId, territory, gridDimensions } = getExternalState();
-  const { buyingBuilding } = getInternalState();
-  
-  if (!buyingBuilding) return;
-
-  let tileX = tileMouseX();
-  let tileY = tileMouseY();
-
-  if (!inBounds(tileX, tileY, gridDimensions.width, gridDimensions.height)) return false;
-
-  let itemBuying = shopItems.find(item => item.id == buyingBuilding);
-
-  let canBuy = canBuyResource(itemBuying.cost, getResources());
-
-  let unitAtPos = units.find(unit => unit.playerId == playerId && unit.x == tileX && unit.y == tileY);
-  if (unitAtPos && unitAtPos.fighting) canBuy = false;
-
-  if (anythingAtPos(tileX, tileY)) canBuy = false;
-  
-  if (territory[tileY][tileX] !== playerId) canBuy = false;
-
-  let auras = getAuraPositions(cities.map(city => ({ x: city.x, y: city.y })));
-  if (!positionInPositionList({ x: tileX, y: tileY }, auras)) canBuy = false;
-
-  const { allowed, efficiency } = resolveTerritoryBlacklist(itemBuying.blacklist, land[tileY][tileX]);
-  if (!allowed) canBuy = false;
-
-  if (mouseClicked) {
-    registerClick(() => {
-  
-      if (territory[tileY][tileX] !== playerId) {
-
-        displayError("You can only place buildings in your territory.");
-
-        return;
-
-      }
-
-      emit(Constants.messages.buyFromShop, {
-        itemId: itemBuying.id,
-        x: tileX,
-        y: tileY
-      });
-
-      mutateInternalState(state => {
-        state.buyingBuilding = null;
-      });
-  
-    });
-  }
-  
-  ctx.globalAlpha = 0.3;
-  ctx.fillStyle = "green";
-
-  if (!canBuy) ctx.fillStyle = "red";
-
-  ctx.fillRect(tileX * RenderConstants.CELL_WIDTH, tileY * RenderConstants.CELL_HEIGHT, RenderConstants.CELL_WIDTH, RenderConstants.CELL_HEIGHT);
-  ctx.globalAlpha = 1;
-
-  let asset = getAsset(itemBuying.image.split(".")[0]);
-
-  let rect = drawBuilding(asset, tileX, tileY);
-
-  ctx.globalAlpha = 0.9;
-  renderCost(itemBuying.cost, rect.x + rect.width/2, rect.y + rect.height * 0.7);
-  ctx.globalAlpha = 1;
-
-  if (efficiency) {
-
-    let showEfficiency = Math.floor(efficiency * 100);
-    let message;
-    if (showEfficiency > 100) {
-      showEfficiency -= 100;
-      showEfficiency = `+${showEfficiency}%`;
-      message = "higher rates";
-      ctx.fillStyle = "#005c15";
-    } else if (showEfficiency < 100) {
-      showEfficiency = 100 - showEfficiency;
-      showEfficiency = `-${showEfficiency}%`;
-      message = "lower rates";
-      ctx.fillStyle = "#5c0000";
-    }
-
-    message = `${itemBuying.name}s yield ${showEfficiency} ${message} in ${land[tileY][tileX]} tiles`;
-    
-    let fontSize = 4;
-    ctx.fontSize = fontSize;
-    let textWidth = ctx.measureText(message).width;
-    
-    let innerMargin = 3;
-    let innerPadding = 3;
-    let marginBottom = 6;
-
-    let boxWidth = 22;
-
-    let totalWidth = boxWidth + innerMargin + innerPadding*2 + textWidth;
-    let totalHeight = innerPadding * 2 + fontSize;
-    let totalY = rect.y - marginBottom - totalHeight;
-
-    let boxX = rect.x + rect.width/2 - totalWidth/2;
-    ctx.fillRect(boxX, totalY, boxWidth, totalHeight);
-
-    ctx.fillStyle = "#404040";
-    ctx.fillRect(boxX + boxWidth + innerMargin, totalY, innerPadding*2 + textWidth, totalHeight);
-
-    ctx.textBaseline = "middle";
-    ctx.textAlign = "center";
-    ctx.fillStyle = "white";
-    ctx.fillText(message, boxX + boxWidth + innerMargin + innerPadding + textWidth/2, totalY + innerPadding + fontSize/2);
-
-    ctx.fontSize = 5;
-    ctx.fillText(showEfficiency, boxX + boxWidth/2, totalY + totalHeight/2);
-
-  }
-
-}
-
-function renderPurchasingStructure() {
-
-  const { land, shopItems, buildings, cities, units, playerId, territory, gridDimensions } = getExternalState();
-  const { buyingStructure } = getInternalState();
-  
-  if (!buyingStructure) return;
-
-  let tileX = tileMouseX();
-  let tileY = tileMouseY();
-
-  if (!inBounds(tileX, tileY, gridDimensions.width, gridDimensions.height)) return false;
-
-  let itemBuying = shopItems.find(item => item.id == buyingStructure);
-
-  let canBuy = canBuyResource(itemBuying.cost, getResources());
-
-  let unitAtPos = units.find(unit => unit.playerId == playerId && unit.x == tileX && unit.y == tileY);
-  if (unitAtPos && unitAtPos.fighting) canBuy = false;
-
-  if (anythingAtPos(tileX, tileY)) canBuy = false;
-  
-  if (territory[tileY][tileX] !== playerId) canBuy = false;
-
-  const { allowed, efficiency } = resolveTerritoryBlacklist(itemBuying.blacklist, land[tileY][tileX]);
-  if (!allowed) canBuy = false;
-
-  if (mouseClicked) {
-    registerClick(() => {
-  
-      if (territory[tileY][tileX] !== playerId) {
-
-        displayError("You can only place buildings in your territory.");
-
-        return;
-
-      }
-
-      emit(Constants.messages.buyFromShop, {
-        itemId: itemBuying.id,
-        x: tileX,
-        y: tileY
-      });
-  
-    });
-  }
-  
-  ctx.globalAlpha = 0.3;
-  ctx.fillStyle = "green";
-
-  if (!canBuy) ctx.fillStyle = "red";
-
-  ctx.fillRect(tileX * RenderConstants.CELL_WIDTH, tileY * RenderConstants.CELL_HEIGHT, RenderConstants.CELL_WIDTH, RenderConstants.CELL_HEIGHT);
-  ctx.globalAlpha = 1;
-
-  let asset = getAsset(itemBuying.image.split(".")[0]);
-
-  let rect = drawBuilding(asset, tileX, tileY);
-
-  ctx.globalAlpha = 0.9;
-  renderCost(itemBuying.cost, rect.x + rect.width/2, rect.y + rect.height * 0.7);
-  ctx.globalAlpha = 1;
-
-  if (efficiency) {
-
-    let showEfficiency = Math.floor(efficiency * 100);
-    let message;
-    if (showEfficiency > 100) {
-      showEfficiency -= 100;
-      showEfficiency = `+${showEfficiency}%`;
-      message = "higher rates";
-      ctx.fillStyle = "#005c15";
-    } else if (showEfficiency < 100) {
-      showEfficiency = 100 - showEfficiency;
-      showEfficiency = `-${showEfficiency}%`;
-      message = "lower rates";
-      ctx.fillStyle = "#5c0000";
-    }
-
-    message = `${itemBuying.name}s yield ${showEfficiency} ${message} in ${land[tileY][tileX]} tiles`;
-    
-    let fontSize = 4;
-    ctx.fontSize = fontSize;
-    let textWidth = ctx.measureText(message).width;
-    
-    let innerMargin = 3;
-    let innerPadding = 3;
-    let marginBottom = 6;
-
-    let boxWidth = 22;
-
-    let totalWidth = boxWidth + innerMargin + innerPadding*2 + textWidth;
-    let totalHeight = innerPadding * 2 + fontSize;
-    let totalY = rect.y - marginBottom - totalHeight;
-
-    let boxX = rect.x + rect.width/2 - totalWidth/2;
-    ctx.fillRect(boxX, totalY, boxWidth, totalHeight);
-
-    ctx.fillStyle = "#404040";
-    ctx.fillRect(boxX + boxWidth + innerMargin, totalY, innerPadding*2 + textWidth, totalHeight);
-
-    ctx.textBaseline = "middle";
-    ctx.textAlign = "center";
-    ctx.fillStyle = "white";
-    ctx.fillText(message, boxX + boxWidth + innerMargin + innerPadding + textWidth/2, totalY + innerPadding + fontSize/2);
-
-    ctx.fontSize = 5;
-    ctx.fillText(showEfficiency, boxX + boxWidth/2, totalY + totalHeight/2);
-
-  }
-
-}
-
 function drawBuilding(asset, x, y) {
 
   ctx.drawImage(asset, x * RenderConstants.CELL_WIDTH + RenderConstants.BUILDING_PADDING, y * RenderConstants.CELL_HEIGHT + RenderConstants.BUILDING_PADDING, RenderConstants.CELL_WIDTH - RenderConstants.BUILDING_PADDING*2, RenderConstants.CELL_HEIGHT - RenderConstants.BUILDING_PADDING*2);
@@ -511,20 +214,20 @@ function drawBuilding(asset, x, y) {
 
 function renderCities() {
 
-  const { territory, playerId, gridDimensions, cities } = getExternalState();
+  const { gridDimensions, cities } = getExternalState();
 
   cities.forEach(city => {
 
     let { x, y, population, turnsLeft, id } = city;
 
-    drawBuilding(getAsset("city"), x, y);
+    renderBuiltNode(city, "city");
 
-    if (territory[y][x] !== playerId) return;
+    if (!isFriendlyTerritory(x, y)) return;
 
-    let ringPositions = getRingPositions({ x, y }).filter(pos => inBounds(pos.x, pos.y, gridDimensions.width, gridDimensions.height)).filter(pos => territory[pos.y][pos.x] == playerId);
+    let ringPositions = getRingPositions({ x, y }).filter(pos => inBounds(pos.x, pos.y, gridDimensions.width, gridDimensions.height)).filter(pos => isFriendlyTerritory(pos.x, pos.y));
     let farms = ringPositions.filter(pos => {
       let b = getBuildingAtPosition(pos.x, pos.y);
-      return b && territory[pos.y][pos.x] == playerId && b.type.name == "Farm";
+      return b && b.type.name == "Farm";
     });
 
     let turnSpeed = 4 ** farms.length;
@@ -557,44 +260,6 @@ function renderVagrantUnits() {
     renderVagrantUnit(vagrantUnit);
 
   });
-
-}
-
-function renderingHoveringTile() {
-
-  const { units } = getExternalState();
-  const { draggingUnit, selectedUnit } = getInternalState();
-
-  if (draggingUnit && selectedUnit) {
-
-    const { x: fromX, y: fromY } = getUnitById(selectedUnit);
-
-    const possibleTiles = getAdjescentPositions({ x: fromX, y: fromY });
-
-    possibleTiles.push({ x: fromX, y: fromY });
-
-    possibleTiles.forEach(({ x: posX, y: posY }) => {
-      ctx.fillStyle = "#00ff00";
-      ctx.globalAlpha = 0.3;
-
-      if (!canUnitMoveTo(getUnitById(selectedUnit), posX, posY)) return;
-
-      ctx.fillRect(posX * RenderConstants.CELL_WIDTH, posY * RenderConstants.CELL_HEIGHT, RenderConstants.CELL_WIDTH, RenderConstants.CELL_HEIGHT);
-    });
-
-    const { x: toX, y: toY } = getHoveringTileCoords();
-
-    ctx.fillStyle = "#00ff00";
-    if (!canUnitMoveTo(getUnitById(selectedUnit), toX, toY)) {
-      ctx.fillStyle = "#ff0000";
-    }
-    ctx.globalAlpha = 0.5;
-
-    ctx.fillRect(toX * RenderConstants.CELL_WIDTH, toY * RenderConstants.CELL_HEIGHT, RenderConstants.CELL_WIDTH, RenderConstants.CELL_HEIGHT);
-
-    ctx.globalAlpha = 1;
-
-  }
 
 }
 
@@ -856,29 +521,5 @@ function renderUnits() {
     let rect = renderUnit(unit);
   
   });
-
-}
-
-function renderChangeNumber(change, progress, x, y, compact) {
-
-  ctx.globalAlpha = 1 - progress;
-  let sign = change >= 0 ? "+" : "";
-  if (change < 0) {
-    ctx.fillStyle = "#540101";
-  } else {
-    ctx.fillStyle = "#015416";
-  }
-
-  let yChange = RenderConstants.CELL_HEIGHT * 0.5;
-
-  ctx.fontSize = compact ? 7 : 20;
-
-  ctx.fillCircle(x, y - decayingQuantity(yChange, progress) + yChange, compact ? 6 : 20);
-  
-  ctx.fillStyle = "white";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText(sign + change, x, y - decayingQuantity(yChange, progress) + yChange);
-  ctx.globalAlpha = 1;
 
 }

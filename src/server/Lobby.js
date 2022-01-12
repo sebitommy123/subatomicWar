@@ -13,13 +13,13 @@ class Lobby {
 
     this.config = {
       gridDimensions: { // size of the playing area in tiles
-        width: 15,
-        height: 15
+        width: 7,
+        height: 7
       },
       waitTime: 15, // time for players to choose starting positions
       dayLength: 10 * 1000, // length of a day in milliseconds
       startingResources: { gold: 0, wood: 50, oil: 0 }, // starting resources
-      resourcesPerDay: { gold: 10, wood: 5, oil: 0 }, // resources per day naturally
+      resourcesPerDay: { gold: 0, wood: 0, oil: 0 }, // resources per day naturally
       vagrantMoveTime: 3000, // time required for unit to move from tile to tile
       fightTime: 1000, // i have no idea??????????
       fightSpeed: 2000, // ms in between fighting turns

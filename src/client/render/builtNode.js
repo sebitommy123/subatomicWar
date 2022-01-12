@@ -1,4 +1,4 @@
-import { registerClick, mouseClicked, registerNextUnhandledClickHandler } from '../userInput';
+import { registerClick, mouseClicked, registerNextUnhandledClickHandler, mouseRightClicked } from '../userInput';
 
 import { emit } from '../networking';
 
@@ -7,18 +7,32 @@ import { getExternalState, getInternalState, mutateInternalState } from '../stat
 import { mouseInLastCircle, mouseInRect } from '../utils/geometry';
 import { renderProperty } from './property';
 import { ctx } from '../render';
+import { openContextMenu } from './contextMenu';
+import { isFriendlyTerritory } from '../utils/game';
 
 
 export function renderBuiltNode(builtNode, superType) {
 
   const { deletingObject } = getInternalState();
-  const { playerId, territory } = getExternalState();
 
   let { x, y, type } = builtNode;
 
   let rect = renderProperty(x, y, type);
 
-  if (playerId == territory[y][x]) {
+  if (isFriendlyTerritory(x, y)) {
+
+    if (mouseRightClicked && mouseInRect(rect)) {
+      openContextMenu([
+        {
+          image: "fire",
+          text: `Raze ${type.name}`,
+          cost: type.razeCost,
+          onClick: () => {
+            console.log("Raze!!");
+          },
+        }
+      ]);
+    }
 
     if (mouseClicked && mouseInRect(rect)) {
       registerClick(() => {

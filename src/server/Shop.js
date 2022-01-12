@@ -223,6 +223,8 @@ class Shop {
         oil: { allowed: false },
       },
       tags: [],
+      razeCost: { gold: 20 },
+      razeTime: 2 * 1000,
     });
 
     this.addItem({
@@ -243,6 +245,8 @@ class Shop {
         oil: { allowed: false },
       },
       tags: [],
+      razeCost: { gold: 20 },
+      razeTime: 2 * 1000,
     });
 
     this.addItem({
@@ -263,6 +267,8 @@ class Shop {
         oil: { allowed: false },
       },
       tags: [],
+      razeCost: { gold: 20 },
+      razeTime: 2 * 1000,
     });
 
     this.addItem({
@@ -283,6 +289,8 @@ class Shop {
         oil: { allowed: true },
       },
       tags: [],
+      razeCost: { gold: 20 },
+      razeTime: 2 * 1000,
     });
 
     this.addItem({
@@ -301,6 +309,8 @@ class Shop {
         oil: { allowed: false },
       },
       tags: [],
+      razeCost: { gold: 20 },
+      razeTime: 2 * 1000,
     });
 
     this.addItem({
@@ -309,7 +319,7 @@ class Shop {
       cost: { wood: 100, gold: 100 },
       image: "city.png",
       type: "city",
-      resourceYield: { gold: 5, wood: 5 },
+      resourceYield: { gold: 10, wood: 5 },
       food: 0,
       combat: { attack: 1.5, defense: 1.5 },
       blacklist: {
@@ -317,6 +327,8 @@ class Shop {
         oil: { allowed: false },
       },
       tags: [],
+      razeCost: { gold: 50 },
+      razeTime: 10 * 1000,
     });
 
     this.addItem({
@@ -334,19 +346,24 @@ class Shop {
         mountains: { allowed: false },
       },
       tags: [],
+      razeCost: {},
+      razeTime: 0.5 * 1000,
     });
 
   }
 
   addItem(item) {
 
-    let { name, cost, image, type, desc, blacklist, resourceYield, food, combat, unitYield } = item;
+    let { name, cost, image, type, desc, blacklist, resourceYield, food, combat, unitYield, razeCost, razeTime } = item;
 
     if (!unitYield) unitYield = 0;
 
+    if (!razeCost) razeCost = {};
+    if (!razeTime) razeTime = 0;
+
     this.items.push({
       id: nanoid(),
-      name, cost, image, type, desc, blacklist, resourceYield, food, combat, unitYield
+      name, cost, image, type, desc, blacklist, resourceYield, food, combat, unitYield, razeCost, razeTime
     });
 
   }
