@@ -5,7 +5,7 @@ import { RenderConstants, ctx } from "../render";
 import { getExternalState, getInternalState, mutateInternalState } from "../state";
 import { gameMouseX, gameMouseY, mouseClicked, registerClick, registerDraggableSurface, registerNextMouseUpHandler, registerNextUnhandledClickHandler, registerScrollableSurface } from "../userInput";
 import { getFreeCost } from "../utils/cost";
-import { canUnitMoveTo, enemyUnitAtPosition, getQuantityAtPosition, getUnitAtPosition, getUnitById } from "../utils/game";
+import { canUnitMoveTo, enemyUnitAtPosition, getQuantityAtPosition, getUnitAtPosition, getUnitById, isFriendlyTerritory } from "../utils/game";
 import { getDirectionFromPosToPos, getHoveringTileCoords, mouseInRect, movePositionInDir, positionCenteredAt } from "../utils/geometry";
 import { decayingQuantity, interpolateXYC, sinusoidalTimeValue } from "../utils/math";
 import { getValidTilesMoveUnit } from "../utils/tileValidation";
@@ -268,7 +268,7 @@ export function renderUnit(unit) {
 
 }
 
-function renderPlacingUnit(x, y, quantity) {
+function renderMovingUnit(x, y, quantity) {
 
   const { movingObject } = getInternalState();
 
@@ -276,16 +276,30 @@ function renderPlacingUnit(x, y, quantity) {
 
   if (!unit) return;
 
-  let renderQuantity = quantity + getQuantityAtPosition(x, y);
+  let renderQuantity = quantity;
 
-  let pos = positionCenteredAt(x, y);
-
-  if (x == unit.x && y == unit.y) {
-    pos = { x: gameMouseX, y: gameMouseY };
-    renderQuantity = quantity;
+  if (isFriendlyTerritory(x, y)) {
+    renderQuantity = quantity + getQuantityAtPosition(x, y);
   }
 
-  return renderSoldierAndQuantity({ ...pos, c: 0 }, renderQuantity, true)
+  let pos = positionCenteredAt(x, y);
+  let c = 0;
+
+  if (!unit.vagrant) {
+    if (x == unit.x && y == unit.y) {
+      pos = { x: gameMouseX, y: gameMouseY };
+      renderQuantity = quantity;
+    }
+  } else {
+    if (x == unit.vagrantData.toX && y == unit.vagrantData.toY) {
+      pos = { x: gameMouseX, y: gameMouseY };
+      renderQuantity = quantity;
+      c = 1;
+    }
+  }
+  
+
+  return renderSoldierAndQuantity({ ...pos, c }, renderQuantity, true)
 }
 
 function canMoveUnitFrom(x, y) {
@@ -295,6 +309,10 @@ function canMoveUnitFrom(x, y) {
   const unit = getUnitById(movingObject.id);
 
   if (!unit) return;
+
+  if (unit.vagrant) {
+    return [{ x: unit.x, y: unit.y }];
+  }
 
   return getValidTilesMoveUnit(unit.x, unit.y);
 }
@@ -326,8 +344,21 @@ function moveUnitTo(x, y, quantity) {
 
 }
 
+
+
+export function renderPlacingSoldier(x, y, quantity) {
+  
+  let renderQuantity = quantity;
+
+  if (isFriendlyTerritory(x, y)) {
+    renderQuantity = quantity + getQuantityAtPosition(x, y);
+  }
+
+  return renderSoldierAndQuantity({ ...positionCenteredAt(x, y), c: 0 }, renderQuantity, true);
+}
+
 function handleUnitStartMoving(unit) {
-  setPlacing("unit", unit.id, getFreeCost(), renderPlacingUnit, canMoveUnitFrom, moveUnitTo, {
+  setPlacing("unit", unit.id, getFreeCost(), renderMovingUnit, canMoveUnitFrom, moveUnitTo, {
     tag: "movingUnit", 
     max: () => getUnitById(unit.id).quantity, 
     tip: (quantity) => [

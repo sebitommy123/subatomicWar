@@ -4,7 +4,7 @@ import { getAsset } from '../assets';
 import { emit } from '../networking';
 import { setPlacing } from '../render/placing';
 import { drawAllCityAuras, drawAuraAt, drawBuilding } from '../render/property';
-import { renderSoldierAndQuantity } from '../render/soldier';
+import { renderPlacingSoldier, renderSoldierAndQuantity } from '../render/soldier';
 import { mutateInternalState } from '../state';
 import { getQuantityAtPosition, getUnitAtPosition, ownedUnitAtPosition } from '../utils/game';
 import { getMaxUnitPurchase, multiplyCost } from '../utils/general';
@@ -40,7 +40,7 @@ function Item({ id, name, imageSrc, asset, cost, type, description, objectType }
     };
 
     if (type == "unit") {
-      setPlacing("unit", id, cost, (x, y, quantity) => renderSoldierAndQuantity({ ...positionCenteredAt(x, y), c: 0 }, quantity + getQuantityAtPosition(x, y), true), canPlace, onPlace, {
+      setPlacing("unit", id, cost, renderPlacingSoldier, canPlace, onPlace, {
         tag: "buyingUnit", 
         max: getMaxUnitPurchase, 
         tip: (quantity) => [
