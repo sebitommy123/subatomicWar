@@ -1,6 +1,6 @@
 import { getAsset } from "../assets";
 import { emit } from "../networking";
-import { ctx, RenderConstants, renderCost } from "../render";
+import { ctx, renderAtTop, RenderConstants, renderCost } from "../render";
 import { getExternalState, getInternalState, mutateInternalState } from "../state";
 import { mouseClicked, registerClick, registerNextUnhandledClickHandler } from "../userInput";
 import { getLandEfficiency } from "../utils/game";
@@ -18,27 +18,31 @@ export function renderProperty(x, y, type) {
 
   if (playerId == territory[y][x]) {
 
-    let gain = computeYield(x, y, type);
+    renderAtTop(() => {
 
-    if (!costIsZero(gain)) {
+      let gain = computeYield(x, y, type);
 
-      let length = 2 * 1000;
-      let delta = Date.now() - dayStart;
+      if (!costIsZero(gain)) {
 
-      let progress = delta / length;
+        let length = 2 * 1000;
+        let delta = Date.now() - dayStart;
 
-      if (progress > 1 || progress < 0) progress = 1;
+        let progress = delta / length;
 
-      ctx.globalAlpha = 1 - progress;
-      let color = "#015416";
+        if (progress > 1 || progress < 0) progress = 1;
 
-      let yChange = RenderConstants.CELL_HEIGHT * 0.5;
+        ctx.globalAlpha = 1 - progress;
+        let color = "#015416";
 
-      renderCost(gain, rect.x + rect.width/2, rect.y + rect.height * 0.7 - decayingQuantity(yChange, progress));
+        let yChange = RenderConstants.CELL_HEIGHT * 0.5;
+        
+        renderCost(gain, rect.x + rect.width/2, rect.y + rect.height * 0.7 - decayingQuantity(yChange, progress));
 
-      ctx.globalAlpha = 1;
+        ctx.globalAlpha = 1;
 
-    }
+      }
+
+    });
 
   }
 

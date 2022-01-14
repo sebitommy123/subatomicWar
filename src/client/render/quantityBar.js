@@ -4,6 +4,38 @@ import { mouseClicked, mouseX, mouseY, registerClick, registerDraggableSurface, 
 import { getMaxUnitPurchase } from "../utils/general";
 import { pointInRect } from "../utils/geometry";
 
+export const shortcuts = {
+  "1": 0.1,
+  "2": 0.2,
+  "3": 0.3,
+  "4": 0.4,
+  "5": 0.5,
+  "6": 0.6,
+  "7": 0.7,
+  "8": 0.8,
+  "9": 0.9,
+  "w": 1,
+  "s": 0,
+};
+
+export function isQuantityBarOpen() {
+
+  const { quantityBar } = getInternalState();
+
+  return quantityBar.currentQuantityBar != null;
+
+}
+
+export function setQuantityBarQuantity(newQuantity) {
+
+  if (!isQuantityBarOpen()) return;
+
+  const { quantityBar } = getInternalState();
+
+  quantityBar.currentPercentage = newQuantity;
+
+}
+
 export function setQuantityBar(quantityBarConfig) {
 
   removeQuantityBar();
@@ -82,12 +114,17 @@ export function drawQuantityBar() {
   ctx.fillStyle = "#404040";
   ctx.abs.fillRect(canvas.width - marginRight - barWidth, marginTop, barWidth, barHeight);
 
+  let hoveringOverBar = false;
+
   if (pointInRect({ x: mouseX, y: mouseY }, {
     x: canvas.width - marginRight - barWidth, 
     y: marginTop, 
     width: barWidth, 
     height: barHeight
   })) {
+
+    hoveringOverBar = true;
+
     function update() {
       const newFillAbs = barHeight - (mouseY - marginTop);
       let newFillPercent = newFillAbs / barHeight;
@@ -95,7 +132,7 @@ export function drawQuantityBar() {
       newFillPercent = Math.floor(newFillPercent * 100) / 100;
 
       if (newFillPercent > 1) newFillPercent = 1;
-      if (newFillPercent < 0) newFillPercent = 0.001;
+      if (newFillPercent < 0) newFillPercent = 0;
 
       mutateInternalState(state => {
         state.quantityBar.currentPercentage = newFillPercent;
@@ -111,7 +148,7 @@ export function drawQuantityBar() {
         let newVal = state.quantityBar.currentPercentage - dy * 0.003;
 
         if (newVal > 1) newVal = 1;
-        if (newVal < 0) newVal = 0.001;
+        if (newVal < 0) newVal = 0;
 
         state.quantityBar.currentPercentage = newVal;
       });

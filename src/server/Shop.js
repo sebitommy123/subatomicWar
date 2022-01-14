@@ -388,6 +388,14 @@ class Shop {
 
   }
 
+  canPlaceBuiltNode(itemName, x, y) {
+    let item = this.items.find(item => item.name.toLowerCase() === itemName.toLowerCase());
+
+    let { allowed } = resolveTerritoryBlacklist(item.blacklist, this.game.land[y][x]);
+
+    return allowed;
+  }
+
   handleOnBuyFromShop(player, input) {
 
     console.log("Buying from shop");

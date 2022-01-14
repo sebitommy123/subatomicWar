@@ -3,12 +3,13 @@ import { getPositionInPositionList, positionInPositionList } from "../../shared/
 import { emit } from "../networking";
 import { ctx, RenderConstants, renderCost } from "../render";
 import { getExternalState, getInternalState, mutateInternalState } from "../state";
-import { forceStopDrag, mouseClicked, registerClick, registerNextMouseUpHandler, registerScrollableSurface, tileMouseX, tileMouseY } from "../userInput";
+import { forceStopDrag, mouseClicked, mouseRightClicked, registerClick, registerNextMouseUpHandler, registerScrollableSurface, tileMouseX, tileMouseY } from "../userInput";
 import { isFreeCost } from "../utils/cost";
 import { getQuantityAtPosition } from "../utils/game";
 import { canBuy, inBounds, multiplyCost } from "../utils/general";
 import { mouseInRect } from "../utils/geometry";
-import { getQuantityBarQuantity, removeQuantityBar, setQuantityBar } from "./quantityBar";
+import { closeContextMenu } from "./contextMenu";
+import { getQuantityBarQuantity, removeQuantityBar, setQuantityBar, setQuantityBarQuantity } from "./quantityBar";
 
 export function stopAllPlacing() {
   mutateInternalState(state => {
@@ -17,6 +18,8 @@ export function stopAllPlacing() {
     state.movingObject = null;
     
     removeQuantityBar();
+
+    closeContextMenu();
 
     forceStopDrag();
   });
@@ -90,11 +93,15 @@ export function renderPlacingObject() {
 
   let canBuyBool = canBuy(netCost);
 
-  if (mouseClicked) {
+  if (mouseClicked || mouseRightClicked) {
     
     registerClick(() => {
 
-      onPlace(tileX, tileY, quantity);
+      if (mouseRightClicked) {
+        setQuantityBarQuantity(0.5);
+      }
+
+      onPlace(tileX, tileY, getQuantityBarQuantity());
 
       if (extraOptions.hideAfter) {
         stopAllPlacing();
@@ -153,7 +160,7 @@ export function renderPlacingObject() {
 
   rect.width *= 0.5;
 
-  if (mouseInRect(rect) && quantifiable) {
+  if (mouseInRect(rect) && quantifiable && false) {
 
     registerScrollableSurface((dy) => {
       mutateInternalState(state => {

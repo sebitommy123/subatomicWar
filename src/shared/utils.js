@@ -98,6 +98,21 @@ function resolveTerritoryBlacklist(blacklist, tile) {
   
 }
 
+// make word prural
+function pluralize(word) {
+
+  if (word.endsWith("y")) {
+    return word.slice(0, -1) + "ies";
+  }
+
+  if (word.endsWith("s")) {
+    return word + "es";
+  }
+
+  return word + "s";
+
+}
+
 module.exports = {
   isAdjescent,
   getAdjescentPositions,
@@ -106,5 +121,6 @@ module.exports = {
   positionInPositionList,
   getPositionInPositionList,
   resolveTerritoryBlacklist,
-  getRingPositions
+  getRingPositions,
+  pluralize
 }

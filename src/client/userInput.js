@@ -1,5 +1,6 @@
 import { canvas, ctx, RenderConstants } from "./render";
 import { stopAllPlacing } from "./render/placing";
+import { isQuantityBarOpen, setQuantityBarQuantity, shortcuts } from "./render/quantityBar";
 import { mutateInternalState } from "./state";
 
 export let dragging = false;
@@ -41,6 +42,16 @@ function handleKeyDown(evt) {
 
   if (key == "Escape") {
     stopAllPlacing();
+  }
+
+  let lowerKey = key.toLowerCase();
+
+  if (shortcuts[lowerKey] != null) {
+    let newQuantity = shortcuts[lowerKey];
+
+    if (isQuantityBarOpen()) {
+      setQuantityBarQuantity(newQuantity);
+    }
   }
 
 }

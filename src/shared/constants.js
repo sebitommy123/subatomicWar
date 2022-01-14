@@ -10,8 +10,8 @@ module.exports = Object.freeze({
     moveUnits: "moveUnits",
     retreat: "retreat",
     buyFromShop: "buyFromShop",
-    deleteStructure: "deleteStructure",
-    deleteBuilding: "deleteBuilding",
+    razeBuiltNode: "razeBuiltNode",
+    stopRazingBuiltNode: "stopRazingBuiltNode",
   },
   initialState: {
     screen: "connectingMenu",

@@ -92,6 +92,8 @@ class Game {
     this.stage = "game";
 
     this.day = 0;
+
+    this.shop = new Shop(this); // this has to go before because many things expect the shop items list to exist
     
     this.ensureStartingTile();
 
@@ -100,8 +102,6 @@ class Game {
     this.spawnInitialUnits();
 
     this.registerGameEvents();
-
-    this.shop = new Shop(this);
 
     this.sendSyncUpdate();
 
@@ -151,7 +151,9 @@ class Game {
         
         let isolatedPositions = emptyPositions.filter(pos => isIsolatedPosition(pos, this.getStartingPositions(player.id)));
 
-        const { x, y } = pickRandom(isolatedPositions);
+        let validPositions = isolatedPositions.filter(pos => this.shop.canPlaceBuiltNode("City", pos.x, pos.y));
+
+        const { x, y } = pickRandom(validPositions);
 
         this.territory[y][x] = player.id;
 
@@ -193,60 +195,71 @@ class Game {
       });
 
       player.socket.on({
-        message: Constants.messages.deleteStructure,
+        message: Constants.messages.razeBuiltNode,
         state: state => state.screen === "game" && state.stage === "game",
         input: Joi.object({
-          structureId: Joi.string().required(),
+          x: Joi.number().integer().min(0).max(this.gridDimensions.width - 1).required(),
+          y: Joi.number().integer().min(0).max(this.gridDimensions.height - 1).required(),
         }),
-        respond: (input) => this.handleOnStructureDelete(player, input),
+        respond: (input) => this.handleOnRaze(player, input),
       });
 
       player.socket.on({
-        message: Constants.messages.deleteBuilding,
+        message: Constants.messages.stopRazingBuiltNode,
         state: state => state.screen === "game" && state.stage === "game",
         input: Joi.object({
-          buildingId: Joi.string().required(),
+          x: Joi.number().integer().min(0).max(this.gridDimensions.width - 1).required(),
+          y: Joi.number().integer().min(0).max(this.gridDimensions.height - 1).required(),
         }),
-        respond: (input) => this.handleOnBuildingDelete(player, input),
+        respond: (input) => this.handleOnStopRazing(player, input),
       });
 
     });
 
   }
 
-  handleOnStructureDelete(player, input) {
+  handleOnStopRazing(player, input) {
 
-    const structureId = input.structureId;
+    const { x, y } = input;
 
-    const structure = this.structures.find(s => s.id === structureId);
+    const builtNode = this.getBuiltNodeAtPosition(x, y);
 
-    if (!structure) return;
+    if (!builtNode) return;
 
-    if (structure.getPlayer().id !== player.id) {
-      player.socket.emitError("You don't own this structure.");
+    if (!builtNode.ownedBy(player)) {
+      player.socket.emitError(`You don't own this ${builtNode.type.name}`);
       return;
     }
 
-    structure.remove();
+    builtNode.stopRaze();
 
     this.sendSyncUpdate();
 
   }
 
-  handleOnBuildingDelete(player, input) {
+  handleOnRaze(player, input) {
 
-    const buildingId = input.buildingId;
+    const { x, y } = input;
 
-    const building = this.buildings.find(s => s.id === buildingId);
+    const builtNode = this.getBuiltNodeAtPosition(x, y);
 
-    if (!building) return;
+    if (!builtNode) return;
 
-    if (building.getPlayer().id !== player.id) {
-      player.socket.emitError("You don't own this building.");
+    if (!builtNode.ownedBy(player)) {
+      player.socket.emitError(`You don't own this ${builtNode.type.name}`);
       return;
     }
 
-    building.remove();
+    const cost = builtNode.type.razeCost;
+
+    if (!player.canAfford(cost)) {
+      player.socket.emitError(`You don't have enough resources to raze this ${builtNode.type.name}`);
+      return;
+    }
+
+    player.pay(cost);
+
+    builtNode.raze();
 
     this.sendSyncUpdate();
 
@@ -311,11 +324,26 @@ class Game {
   }
 
   addVagrantUnit(player, x, y, quantity, toX, toY, retreating=false) {
+
+    let moveTime = this.config.vagrantMoveTime.neutral;
+
+    let playerAtDestination = this.getPlayerAtPosition(toX, toY);
+
+    if (playerAtDestination != null) {
+
+      if (playerAtDestination.id == player.id){
+        moveTime = this.config.vagrantMoveTime.friendy;
+      } else {
+        moveTime = this.config.vagrantMoveTime.enemy;
+      }
+
+    }
+
     let vagrantUnit = new Unit(this, player, x, y, quantity, true, {
       toX,
       toY,
       start: Date.now(),
-      end: Date.now() + this.config.vagrantMoveTime,
+      end: Date.now() + moveTime,
     }, retreating);
 
     this.vagrantUnits.push(vagrantUnit);
@@ -326,7 +354,7 @@ class Game {
 
       this.sendSyncUpdate();
 
-    }, this.config.vagrantMoveTime);
+    }, moveTime);
   }
 
   getUnitAtPosition(x, y) {
@@ -375,6 +403,10 @@ class Game {
 
   }
 
+  getLandAt(x, y) {
+    return this.land[y][x];
+  }
+
   tickGame() {
 
     this.dayStart = Date.now();
@@ -383,7 +415,10 @@ class Game {
     this.players.forEach(player => {
       player.pay(this.shop.multiplyCost(this.config.resourcesPerDay, -1));
     });
-
+    
+    this.structures.forEach(structure => {
+      structure.tick();
+    });
     
     this.buildings.forEach(building => {
       building.tick();
@@ -403,11 +438,21 @@ class Game {
     return this.structures.find(s => s.x == x && s.y == y);
   }
 
+  getBuiltNodeAtPosition(x, y) {
+
+    const b = this.getBuildingAtPosition(x, y);
+    const c = this.getCityAtPosition(x, y);
+    const s = this.getStructureAtPosition(x, y);
+
+    if (b) return b;
+    if (c) return c;
+    if (s) return s;
+
+  }
+
   isAnythingAtPos(x, y) {
 
-    if (this.getBuildingAtPosition(x, y)) return true;
-    if (this.getCityAtPosition(x, y)) return true;
-    if (this.getStructureAtPosition(x, y)) return true;
+    return !!this.getBuiltNodeAtPosition(x, y);
 
   }
 
@@ -454,8 +499,25 @@ class Game {
       if (structure && structure.type.name == "Trench") {
         structure.remove();
       }
+      let builtNode = this.getBuiltNodeAtPosition(x, y);
+      if (builtNode) {
+        if (builtNode.isRazing()) {
+          builtNode.stopRaze();
+        }
+      }
     }
 
+  }
+
+  getBuiltNodeArray(builtNodeType) {
+    switch (builtNodeType) {
+      case "city":
+        return this.cities;
+      case "building":
+        return this.buildings;
+      case "structure":
+        return this.structures;
+    }
   }
 
   sendSyncUpdate() {

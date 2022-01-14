@@ -20,7 +20,11 @@ class Lobby {
       dayLength: 10 * 1000, // length of a day in milliseconds
       startingResources: { gold: 0, wood: 50, oil: 0 }, // starting resources
       resourcesPerDay: { gold: 0, wood: 0, oil: 0 }, // resources per day naturally
-      vagrantMoveTime: 3000, // time required for unit to move from tile to tile
+      vagrantMoveTime: {
+        neutral: 2000,
+        enemy: 4000,
+        friendy: 500,
+      }, // time required for unit to move from tile to tile
       fightTime: 1000, // i have no idea??????????
       fightSpeed: 2000, // ms in between fighting turns
       fightInitialDelay: 1000, //time to wait before starting fight

@@ -24,10 +24,10 @@ import { isPlacingUnit, renderPlacingObject, stopAllPlacing } from './render/pla
 import { computeQuantityBar, drawQuantityBar } from './render/quantityBar';
 import { renderContextMenu } from './render/contextMenu';
 
-let animationTickCounter = 0;
-let animationTick = 0;
 export const canvas = document.getElementById('canvas');
 export const ctx = new BetterCtx(canvas.getContext('2d'));
+
+let renderAtTopHandlers = [];
 
 export const RenderConstants = Object.freeze({
   CELL_WIDTH: 100,
@@ -72,6 +72,8 @@ function render() {
 
   tickStart();
 
+  renderAtTopHandlers = [];
+
   ctx.fillStyle = "#d4f1f9";
   ctx.abs.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -103,13 +105,22 @@ function render() {
     }
 
     renderEscapeMessage();
-    renderContextMenu();
 
     drawQuantityBar();
   }
 
+  renderAtTopHandlers.forEach(h => h());
+  
+  renderContextMenu();
+
   tickEnd();
 
+}
+
+export function renderAtTop(handler) {
+  
+  renderAtTopHandlers.push(handler);
+  
 }
 
 function renderBuildings() {
@@ -153,7 +164,29 @@ function renderEscapeMessage() {
 
 }
 
-export function renderCost(cost, x, y) {
+export function getCostRenderWidth(cost, abs=false) {
+
+  const padding = 4;
+  const iconWidth = 13;
+  const iconMarginRight = 6;
+  const costSeparation = 10;
+  const iconHeight = 13;
+
+  if (abs) {
+    ctx.abs.font = iconHeight + "px Verdana";
+  } else {
+    ctx.fontSize = iconHeight;
+  }
+
+  const cumTextWidth = Object.values(cost).reduce((total, quantity) => total + ctx.measureText(quantity).width, 0);
+
+  const boxWidth = padding*2 + Object.keys(cost).length * (iconWidth + iconMarginRight + costSeparation) + cumTextWidth - costSeparation;
+
+  return boxWidth;
+
+}
+
+export function renderCost(cost, x, y, transparent=false, abs=false) {
 
   // delete null values from object cost
   for (let key in cost) {
@@ -168,32 +201,39 @@ export function renderCost(cost, x, y) {
   const iconMarginRight = 6;
   const costSeparation = 10;
 
-  ctx.fontSize = iconHeight;
-  const cumTextWidth = Object.values(cost).reduce((total, quantity) => total + ctx.measureText(quantity).width, 0);
+  let useCtx = ctx;
+
+  if (abs) {
+    useCtx = ctx.abs;
+    useCtx.font = iconHeight + "px Verdana";
+  } else {
+    ctx.fontSize = iconHeight;
+  }
+  const cumTextWidth = Object.values(cost).reduce((total, quantity) => total + useCtx.measureText(quantity).width, 0);
 
   const boxWidth = padding*2 + Object.keys(cost).length * (iconWidth + iconMarginRight + costSeparation) + cumTextWidth - costSeparation;
   
   x -= boxWidth/2;
   
-  ctx.fillStyle = "#404040";
-  ctx.fillRect(x, y, boxWidth, iconHeight + padding*2);
+  useCtx.fillStyle = "#404040";
+  if (!transparent) useCtx.fillRect(x, y, boxWidth, iconHeight + padding*2);
 
   Object.keys(cost).forEach((resource, i) => {
 
     const image = getAsset(resource);
     const quantity = cost[resource];
 
-    const textWidth = ctx.measureText(quantity).width;
+    const textWidth = useCtx.measureText(quantity).width;
 
     const thisX = x + padding + i * (iconWidth + iconMarginRight + costSeparation + textWidth);
     const thisY = y + padding;
 
-    ctx.drawImage(image, thisX, thisY, iconWidth, iconHeight);
+    useCtx.drawImage(image, thisX, thisY, iconWidth, iconHeight);
 
-    ctx.fillStyle = "#ffffff";
-    ctx.textAlign = "left";
-    ctx.textBaseline = "middle";
-    ctx.fillText(quantity, thisX + iconWidth + iconMarginRight, thisY + iconHeight/2);
+    useCtx.fillStyle = "#ffffff";
+    useCtx.textAlign = "left";
+    useCtx.textBaseline = "middle";
+    useCtx.fillText(quantity, thisX + iconWidth + iconMarginRight, thisY + iconHeight/2 + 1);
 
   });
 

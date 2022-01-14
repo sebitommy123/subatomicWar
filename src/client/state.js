@@ -10,7 +10,6 @@ let internalState = {
   contextMenu: null,
   movingObject: null,
   placingObject: null,
-  deletingObject: null,
 };
 let me;
 
