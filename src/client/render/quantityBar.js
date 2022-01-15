@@ -211,6 +211,29 @@ export function drawQuantityBar() {
   ctx.abs.textBaseline = "top";
   ctx.abs.fillText("0%", canvas.width - marginRight - barWidth/2 + 2, marginTop + barHeight + backgroundPadding + 4);
 
+  if (hoveringOverBar) {
+    Object.keys(shortcuts).forEach(shortcut => {
+      let value = shortcuts[shortcut];
+
+      if (value < 0.004) value = 0.004;
+      if (value > 0.996) value = 0.996;
+
+      let yOffset = barHeight * value;
+
+      let yPos = marginTop + (barHeight - yOffset);
+
+      let xPos = canvas.width - marginRight - barWidth;
+      
+      ctx.abs.fillStyle = "#000000";
+      ctx.abs.fillRect(xPos - 15, yPos - 1, 12, 1);
+
+      ctx.abs.font = "14px Verdana";
+      ctx.abs.textBaseline = "middle";
+      ctx.abs.textAlign = "right";
+      ctx.abs.fillText(`Press "${shortcut}"`, xPos - 19, yPos);
+    });
+  }
+
   const separation = 40;
   const lines = tip.length;
   const lineHeight = 20;

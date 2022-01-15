@@ -10,11 +10,15 @@ DONE
  - refactored quantity bar
  - scrolling is too harsh on mouse
  - added barracks
+ - razing now takes time and gold, can be cancelled, is auto-cancelled upon recapture.
+ - add right click menu
+ - unit move speeds: faster on your territory, neutral in nomansland, slow when invading into enemy
+ - make sure cities don't randomly spawn in ocean
+ - amount quantity shortcuts (f for full)
 
 TODO
+ - razing cities should raze all buildings around it too
  - split render up
- - buildings cost gold to destroy
- - add right click menu
  - add cursor becoming a pointer when you can click, add more hover animations
 	Only active clickable surfaces show a cursor
 	Passive clickable surfaces don't
@@ -36,9 +40,7 @@ TODO
  - separate server into two
  - show name of empire somewhere
  - show soldier alliegance somewhere
- - make sure cities don't randomly spawn in ocean
- - unit move speeds: faster on your territory, neutral in nomansland, slow when invading into enemy
- - amount quantity shortcuts (f for full)
+ - place unit / building / city shortcuts
  - unit auto defense (units in cities automatically defend surrounding tiles in aura)
  - unit mapping (you can send units somewhere and they will move there over time)
  - trenches go on the borders of tiles
@@ -46,6 +48,8 @@ TODO
  - if someone is moving into your tile, you cant move into theirs
  - add quantity bar shortcuts
  - add income per turn
+ - add losing condition
+ - remove city growth days estimation upon reaching 8
  
 Future updates:
  - Military industrial complex

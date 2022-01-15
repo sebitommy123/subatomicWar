@@ -5,11 +5,41 @@ import { ctx, RenderConstants, renderCost } from "../render";
 import { getExternalState, getInternalState, mutateInternalState } from "../state";
 import { forceStopDrag, mouseClicked, mouseRightClicked, registerClick, registerNextMouseUpHandler, registerScrollableSurface, tileMouseX, tileMouseY } from "../userInput";
 import { isFreeCost } from "../utils/cost";
-import { getQuantityAtPosition } from "../utils/game";
+import { getAnythingById, getQuantityAtPosition, getUnitById } from "../utils/game";
 import { canBuy, inBounds, multiplyCost } from "../utils/general";
 import { mouseInRect } from "../utils/geometry";
 import { closeContextMenu } from "./contextMenu";
-import { getQuantityBarQuantity, removeQuantityBar, setQuantityBar, setQuantityBarQuantity } from "./quantityBar";
+import { getQuantityBarQuantity, isQuantityBarOpen, removeQuantityBar, setQuantityBar, setQuantityBarQuantity } from "./quantityBar";
+
+export function ensurePlacingObjectExists() {
+
+  if (isQuantityBarOpen()) {
+    const { quantityBar, placingObject } = getInternalState();
+
+    const tag = quantityBar.currentQuantityBar.tag;
+
+    if (tag == "movingUnit") {
+
+      if (placingObject != null) {
+
+        const id = placingObject.id;
+
+        if (id != null) {
+
+          let exists = getUnitById(id);
+
+          if (exists == null) {
+            stopAllPlacing();
+          }
+
+        }
+
+      }
+
+    }
+  }
+
+}
 
 export function stopAllPlacing() {
   mutateInternalState(state => {

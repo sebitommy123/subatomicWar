@@ -20,7 +20,7 @@ import { getMe, getUnitById, getById, canUnitMoveTo, getBuildingAtPosition, anyt
 import { renderSoldier, renderSoldierAndQuantity, renderUnit, renderVagrantUnit } from './render/soldier';
 import { renderProperty } from './render/property';
 import { renderBuiltNode } from './render/builtNode';
-import { isPlacingUnit, renderPlacingObject, stopAllPlacing } from './render/placing';
+import { ensurePlacingObjectExists, isPlacingUnit, renderPlacingObject, stopAllPlacing } from './render/placing';
 import { computeQuantityBar, drawQuantityBar } from './render/quantityBar';
 import { renderContextMenu } from './render/contextMenu';
 
@@ -71,6 +71,8 @@ function render() {
   const { screen, stage } = getExternalState();
 
   tickStart();
+
+  ensurePlacingObjectExists();
 
   renderAtTopHandlers = [];
 

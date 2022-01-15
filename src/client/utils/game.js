@@ -16,8 +16,18 @@ export function getUnitById(unitId) {
   return getById(unitId, vagrantUnits);
 }
 
+export function getAnythingById(id) {
+  return getById(id, getAllObjects());
+}
+
 export function getById(id, identifiedList) {
   return identifiedList.find(element => element.id === id);
+}
+
+export function getAllObjects() {
+  const { buildings, cities, structures, units, vagrantUnits } = getExternalState();
+
+  return [...buildings, ...cities, ...structures, ...units, ...vagrantUnits];
 }
 
 export function getMe() {
