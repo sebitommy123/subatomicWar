@@ -4,6 +4,7 @@ const ASSET_NAMES = [
   "gold.png", "wood.png", "oil.png",
   "grass.png", "desert.png", "plains.png", "forest.png", "mountains.png", "oilTile.png", "water.png",
   "fire.png", "info.png",
+  "trenchFull.png",
 ];
 
 const assets = {};

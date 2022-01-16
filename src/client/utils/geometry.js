@@ -44,7 +44,11 @@ export function getHoveringTileCoords() {
   };
 }
 
-export function getTerritoryDirPositionFrom(territory, x, y, dir) {
+export function getDirections() {
+  return ["left", "right", "top", "bottom"];
+}
+
+export function getTerritoryDirPositionFrom(x, y, dir) {
   if (dir === "left") {
     x--;
   } else if (dir === "right") {
@@ -60,7 +64,7 @@ export function getTerritoryDirPositionFrom(territory, x, y, dir) {
   return { x, y };
 }
 
-export function getTerritoryDirFrom(territory, x, y, dir) {
+export function getTerritoryDirFrom(x, y, dir) {
   if (dir === "left") {
     x--;
   } else if (dir === "right") {

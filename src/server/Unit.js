@@ -137,29 +137,20 @@ class Unit {
     return this.game.land[this.y][this.x];
   }
 
-  buildingBelow() {
-    return this.game.getBuildingAtPosition(this.x, this.y);
-  }
+  builtNodesBelow() {
 
-  cityBelow() {
-    return this.game.getCityAtPosition(this.x, this.y);
-  }
+    return this.game.getBuiltNodesAtPosition(this.x, this.y);
 
-  structureBelow() {
-    return this.game.getStructureAtPosition(this.x, this.y);
   }
 
   getMultiplier(name) {
     let multiplier = landTypes[this.landBelow()].combat[name];
-    
-    let building = this.buildingBelow();
-    if (building && building.type.combat[name]) multiplier *= building.type.combat[name];
-    
-    let city = this.cityBelow();
-    if (city) multiplier *= this.game.shop.items.find(i => i.type === "city").combat[name];
-    
-    let structure = this.structureBelow();
-    if (structure && structure.type.combat[name]) multiplier *= structure.type.combat[name];
+
+    this.builtNodesBelow().forEach(node => {
+      if (node.type.combat[name]) {
+        multiplier *= node.type.combat[name];
+      }
+    });
 
     return multiplier;
   }

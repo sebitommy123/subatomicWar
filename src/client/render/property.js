@@ -3,18 +3,22 @@ import { emit } from "../networking";
 import { ctx, renderAtTop, RenderConstants, renderCost } from "../render";
 import { getExternalState, getInternalState, mutateInternalState } from "../state";
 import { mouseClicked, registerClick, registerNextUnhandledClickHandler } from "../userInput";
-import { getLandEfficiency } from "../utils/game";
+import { getLandEfficiency, getTerritoryAt } from "../utils/game";
 import { ceilCost, costIsZero, multiplyCost } from "../utils/general";
-import { mouseInLastCircle, mouseInRect, positionCenteredAt } from "../utils/geometry";
+import { getDirections, getTerritoryDirFrom, mouseInLastCircle, mouseInRect, positionCenteredAt } from "../utils/geometry";
 import { decayingQuantity } from "../utils/math";
 
 export function renderProperty(x, y, type) {
 
   const { playerId, territory, dayStart, dayEnd } = getExternalState();
 
-  let asset = getAsset(type.image.split('.')[0]);
+  let rect;
 
-  let rect = drawBuilding(asset, x, y);
+  if (type.isOnBorder) {
+    rect = drawBorderBuilding(getAsset(type.borderImage.split('.')[0]), x, y);
+  } else {
+    rect = drawBuilding(getAsset(type.image.split('.')[0]), x, y);
+  }
 
   if (playerId == territory[y][x]) {
 
@@ -53,6 +57,44 @@ export function renderProperty(x, y, type) {
 function computeYield(x, y, type) {
 
   return ceilCost(multiplyCost(type.resourceYield, getLandEfficiency(x, y, type)));
+
+}
+
+export function drawBorderBuilding(asset, x, y) {
+
+  const width = 10;
+
+  const sides = {
+    right: () => ctx.drawImage(asset, x * RenderConstants.CELL_WIDTH + RenderConstants.CELL_WIDTH - width, y * RenderConstants.CELL_HEIGHT, width, RenderConstants.CELL_HEIGHT),
+    left: () => ctx.drawImage(asset, x * RenderConstants.CELL_WIDTH, y * RenderConstants.CELL_HEIGHT, width, RenderConstants.CELL_HEIGHT),
+    top: () => ctx.drawImage(asset, x * RenderConstants.CELL_WIDTH, y * RenderConstants.CELL_HEIGHT, RenderConstants.CELL_WIDTH, width),
+    bottom: () => ctx.drawImage(asset, x * RenderConstants.CELL_WIDTH, y * RenderConstants.CELL_HEIGHT + RenderConstants.CELL_HEIGHT - width, RenderConstants.CELL_WIDTH, width),
+  }
+
+  getDirections().forEach(dir => {
+
+    if (getTerritoryAt(x, y) == getTerritoryDirFrom(x, y, dir)) {
+      
+      ctx.globalAlpha = 0.2;
+
+    } else {
+
+      ctx.globalAlpha = 1;
+
+    }
+
+    sides[dir]();
+
+    ctx.globalAlpha = 1;
+
+  });
+
+  return {
+    x: x * RenderConstants.CELL_WIDTH + RenderConstants.BUILDING_PADDING,
+    y: y * RenderConstants.CELL_HEIGHT + RenderConstants.BUILDING_PADDING,
+    width: RenderConstants.CELL_WIDTH - RenderConstants.BUILDING_PADDING*2,
+    height: RenderConstants.CELL_HEIGHT - RenderConstants.BUILDING_PADDING*2
+  };
 
 }
 

@@ -350,7 +350,8 @@ class Shop {
       name: "Trench",
       desc: "Better defensive position for your units",
       cost: { wood: 20 },
-      image: "trench.png",
+      image: "trenchFull.png",
+      borderImage: "trench.png",
       type: "structure",
       resourceYield: {},
       food: 0,
@@ -370,7 +371,7 @@ class Shop {
 
   addItem(item) {
 
-    let { name, cost, image, type, desc, blacklist, resourceYield, food, combat, unitYield, razeCost, razeTime, isOnBorder } = item;
+    let { name, cost, image, type, desc, blacklist, resourceYield, food, combat, unitYield, razeCost, razeTime, isOnBorder, borderImage } = item;
 
     if (!unitYield) unitYield = 0;
 
@@ -381,7 +382,7 @@ class Shop {
 
     this.items.push({
       id: nanoid(),
-      name, cost, image, type, desc, blacklist, resourceYield, food, combat, unitYield, razeCost, razeTime, isOnBorder
+      name, cost, image, type, desc, blacklist, resourceYield, food, combat, unitYield, razeCost, razeTime, isOnBorder, borderImage
     });
 
   }

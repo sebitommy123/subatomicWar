@@ -430,8 +430,8 @@ function renderTerritory() {
         neighbors.forEach(dir => {
           const nextDir = clockwiseDir(dir);
           if (neighbors.includes(nextDir)) {
-            const firstStep = getTerritoryDirPositionFrom(territory, x, y, dir);
-            const diagonal = getTerritoryDirFrom(territory, firstStep.x, firstStep.y, nextDir);
+            const firstStep = getTerritoryDirPositionFrom(x, y, dir);
+            const diagonal = getTerritoryDirFrom(firstStep.x, firstStep.y, nextDir);
 
             if (diagonal !== playerId) {
               drawCornerDirMap[dir](x, y);
