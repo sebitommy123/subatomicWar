@@ -15,12 +15,6 @@ class Building extends BuiltNode{
 
   }
 
-  isProductiveSpecific() {
-
-    return this.getCity().getPlayer().id == this.getPlayer().id;
-    
-  }
-
   specificTick() {
 
     this.getCity().foodThisTick += this.type.food;

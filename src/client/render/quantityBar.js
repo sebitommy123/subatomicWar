@@ -227,7 +227,7 @@ export function drawQuantityBar() {
       ctx.abs.fillStyle = "#000000";
       ctx.abs.fillRect(xPos - 15, yPos - 1, 12, 1);
 
-      ctx.abs.font = "14px Verdana";
+      ctx.abs.font = "10px Verdana";
       ctx.abs.textBaseline = "middle";
       ctx.abs.textAlign = "right";
       ctx.abs.fillText(`Press "${shortcut}"`, xPos - 19, yPos);

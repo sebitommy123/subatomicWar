@@ -17,7 +17,7 @@ export function renderBuiltNode(builtNode, superType) {
 
   const { deletingObject } = getInternalState();
 
-  let { x, y, type } = builtNode;
+  let { id, x, y, type } = builtNode;
 
   let rect = renderProperty(x, y, type);
 
@@ -60,8 +60,7 @@ export function renderBuiltNode(builtNode, superType) {
       cost: type.razeCost,
       onClick: () => {
         emit(Constants.messages.razeBuiltNode, {
-          x,
-          y
+          id
         });
       },
     };
@@ -73,8 +72,7 @@ export function renderBuiltNode(builtNode, superType) {
         cost: {},
         onClick: () => {
           emit(Constants.messages.stopRazingBuiltNode, {
-            x,
-            y
+            id
           });
         },
       };

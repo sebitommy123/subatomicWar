@@ -6,32 +6,32 @@ const { getAdjescentPositions } = require("../shared/utils");
 const landTypes = {
   plains: {
     name: "Plains",
-    combat: { attack: 1, defense: 1 },
+    combat: { attack: 1, defense: 1.5 },
     canWalk: true,
   },
   forest: {
     name: "Forest",
-    combat: { attack: 1, defense: 1 },
+    combat: { attack: 1, defense: 1.5 },
     canWalk: true,
   },
   water: {
     name: "Water",
-    combat: { attack: 1, defense: 1 },
+    combat: { attack: 1, defense: 1.5 },
     canWalk: false,
   },
   oil: {
     name: "Oil",
-    combat: { attack: 1, defense: 1 },
+    combat: { attack: 1, defense: 1.5 },
     canWalk: true,
   },
   desert: {
     name: "Desert",
-    combat: { attack: 1, defense: 1 },
+    combat: { attack: 1, defense: 1.5 },
     canWalk: true,
   },
   mountains: {
     name: "Mountains",
-    combat: { attack: 1, defense: 1.5 },
+    combat: { attack: 1, defense: 2 },
     canWalk: true,
   },
 }

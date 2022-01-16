@@ -15,9 +15,18 @@ DONE
  - unit move speeds: faster on your territory, neutral in nomansland, slow when invading into enemy
  - make sure cities don't randomly spawn in ocean
  - amount quantity shortcuts (f for full)
-
-TODO
  - razing cities should raze all buildings around it too
+ - remove scrollable from soldiers
+ - taking other's buildings steals the yield for you, it does not just stop it
+ - add passive defense bonus of 1.5x (all land is 1.5x)
+ - mountain defense bonus to 2x
+ - city defense bonus to 1.5x
+ - trench defense bonus to 1.5x
+ - trenches go on top of other buildings and structures
+
+ 
+TODO
+ 
  - split render up
  - add cursor becoming a pointer when you can click, add more hover animations
 	Only active clickable surfaces show a cursor
@@ -27,7 +36,6 @@ TODO
  - when you click on a unit, show a panel on the left with more info
  - add spritesheets, make soldiers move
  - trench cost down to 15 wood
- - trench defense multiplier to 1.7
  - mines and lumber mill negative multipliers up to 0.6
  - make a panel to see what a building does before placing
  - cities produce 1 gold and 1 wood per turn
@@ -36,22 +44,24 @@ TODO
  - remove games and lobbies if they are empty
  - create lobby system
  - add private lobbies
- - remove scrollable from soldiers, make labels scrollable instead (scroll over quantity or gold to change it)
  - separate server into two
  - show name of empire somewhere
  - show soldier alliegance somewhere
  - place unit / building / city shortcuts
- - unit auto defense (units in cities automatically defend surrounding tiles in aura)
  - unit mapping (you can send units somewhere and they will move there over time)
- - trenches go on the borders of tiles
  - someone is attacking you notification
  - if someone is moving into your tile, you cant move into theirs
- - add quantity bar shortcuts
  - add income per turn
  - add losing condition
  - remove city growth days estimation upon reaching 8
+ - make it clear when your soldiers have a fighting advantage
+	Just hovering your soldier to prepare to fight should tell you
+ - add bots
+ 
+ 
  
 Future updates:
+ - add sound effects and music
  - Military industrial complex
 	Barracks, Fortification, Missile silo, Watchtower, Oil
  - Building upgrades
@@ -59,3 +69,14 @@ Future updates:
 	Markets and influence
  - Mobility update
 	Airports, roads, railroads
+ - Poltical update
+	You choose between Centrism, Capitalism, Communism, Anarchy and Dictatorship
+		Centrism is like not choosing anything. Essentially an opt-out.
+		If you have the same ideology as someone else, your attacks will be far less effective
+		If you have a different ideology, your attacks will be more effective
+		It takes time to switch ideology
+		Centrism: +1 wood, +1 gold
+		Capitalis: +2 gold
+		Communism: +2 wood
+		Anarchy: +2 wood
+		Dictatorship: +2 gold

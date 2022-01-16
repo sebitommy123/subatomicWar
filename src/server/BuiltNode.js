@@ -12,6 +12,7 @@ class BuiltNode {
     this.razingTimeout = null;
     this.razeEnd = null;
     this.razeStart = null;
+    this.razingCollaterally = null;
 
     if (type != null) this.type = type;
 
@@ -79,12 +80,21 @@ class BuiltNode {
 
   }
 
-  raze() {
+  raze(forceTime=null) {
 
-    const time = this.type.razeTime;
+    let time = this.type.razeTime;
 
     if (this.razingTimeout) {
-      return;
+      this.stopRaze();
+    }
+
+    if (this.specificRaze) this.specificRaze();
+
+    if (forceTime != null) {
+      time = forceTime;
+      this.razingCollaterally = true;
+    } else {
+      this.razingCollaterally = false;
     }
 
     this.razeStart = Date.now();
@@ -103,10 +113,14 @@ class BuiltNode {
 
   stopRaze() {
 
+    if (this.specificStopRaze) this.specificStopRaze();
+
     clearTimeout(this.razingTimeout);
 
     this.razingTimeout = null;
     this.razeEnd = null;
+    this.razeStart = null;
+    this.razingCollaterally = null;
 
   }
 

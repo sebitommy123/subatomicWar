@@ -151,6 +151,23 @@ export function filterAllPositions(func) {
   return result;
 
 }
+export function mapAllPositions(func) {
+
+  const { gridDimensions } = getExternalState();
+
+  let result = [];
+
+  for (let x = 0; x < gridDimensions.width; x++) {
+    for (let y = 0; y < gridDimensions.height; y++) {
+
+      result.push(func(x, y));
+
+    }
+  }
+
+  return result;
+
+}
 
 export function getBuildingAtPosition(x, y) {
 
@@ -172,11 +189,21 @@ export function getStructureAtPosition(x, y) {
 
   const { structures } = getExternalState();
 
-  return structures.find(structure => structure.x == x && structure.y == y);
+  return structures.find(structure => !structure.type.isOnBorder && structure.x == x && structure.y == y);
 
 }
 
+export function getBorderAtPosition(x, y) {
 
+  const { structures } = getExternalState();
+
+  return structures.find(structure => structure.type.isOnBorder && structure.x == x && structure.y == y);
+
+}
+
+export function borderAtPos(x, y) {
+  return !!getBorderAtPosition(x, y);
+}
 
 export function anythingAtPos(x, y) {
 

@@ -198,8 +198,7 @@ class Game {
         message: Constants.messages.razeBuiltNode,
         state: state => state.screen === "game" && state.stage === "game",
         input: Joi.object({
-          x: Joi.number().integer().min(0).max(this.gridDimensions.width - 1).required(),
-          y: Joi.number().integer().min(0).max(this.gridDimensions.height - 1).required(),
+          id: Joi.string().required(),
         }),
         respond: (input) => this.handleOnRaze(player, input),
       });
@@ -208,8 +207,7 @@ class Game {
         message: Constants.messages.stopRazingBuiltNode,
         state: state => state.screen === "game" && state.stage === "game",
         input: Joi.object({
-          x: Joi.number().integer().min(0).max(this.gridDimensions.width - 1).required(),
-          y: Joi.number().integer().min(0).max(this.gridDimensions.height - 1).required(),
+          id: Joi.string().required(),
         }),
         respond: (input) => this.handleOnStopRazing(player, input),
       });
@@ -220,9 +218,9 @@ class Game {
 
   handleOnStopRazing(player, input) {
 
-    const { x, y } = input;
+    const { id } = input;
 
-    const builtNode = this.getBuiltNodeAtPosition(x, y);
+    const builtNode = this.getBuiltNodeById(id);
 
     if (!builtNode) return;
 
@@ -231,7 +229,11 @@ class Game {
       return;
     }
 
-    builtNode.stopRaze();
+    if (!builtNode.razingCollaterally) {
+      builtNode.stopRaze();
+    } else {
+      builtNode.getCity().stopRaze();
+    }
 
     this.sendSyncUpdate();
 
@@ -239,9 +241,9 @@ class Game {
 
   handleOnRaze(player, input) {
 
-    const { x, y } = input;
+    const { id } = input;
 
-    const builtNode = this.getBuiltNodeAtPosition(x, y);
+    const builtNode = this.getBuiltNodeById(id);
 
     if (!builtNode) return;
 
@@ -434,25 +436,55 @@ class Game {
 
   }
 
-  getStructureAtPosition(x, y) {
-    return this.structures.find(s => s.x == x && s.y == y);
+  getStructuresAtPosition(x, y) {
+    return this.structures.filter(s => s.x == x && s.y == y);
   }
 
-  getBuiltNodeAtPosition(x, y) {
+  getBuiltNodeById(id) {
 
-    const b = this.getBuildingAtPosition(x, y);
-    const c = this.getCityAtPosition(x, y);
-    const s = this.getStructureAtPosition(x, y);
+    return this.getBuiltNodes().find(b => b.id == id);
 
-    if (b) return b;
-    if (c) return c;
-    if (s) return s;
+  }
+
+  getBuiltNodesAtPosition(x, y) {
+
+    return this.getBuiltNodes().filter(b => b.x == x && b.y == y);
+
+  }
+
+  getBuiltNodes() {
+
+    return [...this.buildings, ...this.cities, ...this.structures];
+
+  }
+
+  getCentralBuiltNodePosition(x, y) {
+
+    return this.getBuiltNodes().find(builtNode => !builtNode.type.isOnBorder && builtNode.x == x && builtNode.y == y);
+
+  }
+
+  getBorderBuiltNodePosition(x, y) {
+
+    return this.getBuiltNodes().find(builtNode => builtNode.type.isOnBorder && builtNode.x == x && builtNode.y == y);
 
   }
 
   isAnythingAtPos(x, y) {
 
-    return !!this.getBuiltNodeAtPosition(x, y);
+    return this.getBuiltNodesAtPosition(x, y).length > 0;
+
+  }
+
+  isCentralBuiltNodePosition(x, y) {
+
+    return !!this.getCentralBuiltNodePosition(x, y);
+
+  }
+
+  isBorderBuiltNodePosition(x, y) {
+
+    return !!this.getBorderBuiltNodePosition(x, y);
 
   }
 
@@ -495,14 +527,16 @@ class Game {
     this.territory[y][x] = player.id;
 
     if (lastOwner != null && lastOwner !== player.id) {
-      let structure = this.getStructureAtPosition(x, y);
-      if (structure && structure.type.name == "Trench") {
-        structure.remove();
+      let borderBuiltNode = this.getBorderBuiltNodePosition(x, y);
+      if (borderBuiltNode) {
+        borderBuiltNode.remove();
       }
-      let builtNode = this.getBuiltNodeAtPosition(x, y);
-      if (builtNode) {
-        if (builtNode.isRazing()) {
-          builtNode.stopRaze();
+      let centralBuiltNode = this.getCentralBuiltNodePosition(x, y);
+      if (centralBuiltNode) {
+        if (centralBuiltNode.isRazing()) {
+          if (!centralBuiltNode.razingCollaterally) {
+            centralBuiltNode.stopRaze();
+          }
         }
       }
     }

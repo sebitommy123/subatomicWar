@@ -1,18 +1,38 @@
-import { getAdjescentPositions, getAuraPositions, isIsolatedPosition } from "../../shared/utils";
+import { getAdjescentPositions, getAuraPositions, isAdjescent, isIsolatedPosition } from "../../shared/utils";
 import { getExternalState } from "../state";
-import { anythingAtPos, canWalkOnPosition, fightingOccuringAt, filterAllPositions, getCityAtPosition, getCityAuraAtPosition, getLandAt, getLandEfficiency, isFriendlyTerritory } from "./game";
+import { anythingAtPos, borderAtPos, canWalkOnPosition, fightingOccuringAt, filterAllPositions, getCityAtPosition, getCityAuraAtPosition, getLandAt, getLandEfficiency, isFriendlyTerritory, mapAllPositions } from "./game";
 import { doesBlacklistAllow, inBounds } from "./general";
 
 export function getValidTilesMoveUnit(fromX, fromY) {
 
-  let candidates = getAdjescentPositions({x: fromX, y: fromY});
+  let candidates = mapAllPositions((x, y) => {
 
-  candidates = candidates.filter(candidate => {
-    if(!inBounds(candidate.x, candidate.y)) return false;
+    if (!canWalkOnPosition(x, y)) return {
+      x, y, valid: false
+    };
 
-    if (!canWalkOnPosition(candidate.x, candidate.y)) return false;
+    if (x == fromX && y == fromY) return {
+      x, y, valid: false
+    };
 
-    return true;
+    if (isAdjescent({x: fromX, y: fromY}, {x, y})) {
+
+      return {
+        x, y, valid: true
+      };
+
+    } else {
+
+      if (!isFriendlyTerritory(x, y)) return {
+        x, y, valid: false
+      };
+
+      return {
+        x, y, valid: true, color: "rgba(200, 255, 200, 255)", r: "Will take several movements to reach.", "e": "Far"
+      };
+
+    }
+
   });
 
   return candidates;
@@ -49,7 +69,11 @@ export function getValidTilesPlaceStructure(objectType) {
 
     if (!doesBlacklistAllow(blacklist, getLandAt(x, y))) return false;
 
-    if (anythingAtPos(x, y)) return false;
+    if (objectType.isOnBorder) {
+      if (borderAtPos(x, y)) return false;
+    } else {
+      if (anythingAtPos(x, y)) return false;
+    }
 
     if (fightingOccuringAt(x, y)) return false;
 

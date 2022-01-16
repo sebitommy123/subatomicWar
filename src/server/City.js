@@ -19,21 +19,19 @@ class City extends BuiltNode{
     return this.getBuildingCount() < this.population;
   }
 
+  getBuildingsInAura() {
+
+    return getRingPositions({ x: this.x, y: this.y }).map(position => {
+
+      return this.game.getBuildingAtPosition(position.x, position.y);
+
+    }).filter(b => b != null);
+
+  }
+
   getBuildingCount() {
 
-    let count = 0;
-
-    getRingPositions({ x: this.x, y: this.y }).forEach(position => {
-
-      let building = this.game.getBuildingAtPosition(position.x, position.y);
-
-      if (building) {
-        count += 1;
-      }
-
-    });
-
-    return count;
+    return this.getBuildingsInAura().length;
 
   }
 
@@ -58,6 +56,25 @@ class City extends BuiltNode{
 
     this.foodThisTick = 0;
       
+  }
+
+  specificRaze() {
+
+    this.getBuildingsInAura().forEach(building => {
+      building.raze(this.type.razeTime);
+    });
+
+  }
+
+  specificStopRaze() {
+
+    this.getBuildingsInAura().forEach(building => {
+      if (building.razingCollaterally) {
+        building.stopRaze();
+      }
+    });
+
+
   }
 
   toClientSpecific() {

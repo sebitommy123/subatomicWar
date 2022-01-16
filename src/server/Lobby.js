@@ -17,7 +17,7 @@ class Lobby {
         height: 7
       },
       waitTime: 15, // time for players to choose starting positions
-      dayLength: 10 * 1000, // length of a day in milliseconds
+      dayLength: 5 * 1000, // length of a day in milliseconds
       startingResources: { gold: 0, wood: 50, oil: 0 }, // starting resources
       resourcesPerDay: { gold: 0, wood: 0, oil: 0 }, // resources per day naturally
       vagrantMoveTime: {

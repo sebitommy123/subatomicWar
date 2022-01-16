@@ -49,9 +49,23 @@ class Shop {
         return;
       }
 
-      if (this.game.isAnythingAtPos(x, y)) {
+      if (item.isOnBorder) {
 
-        player.socket.emitError(`There is already something here.`);
+        if (this.game.isBorderBuiltNodePosition(x, y)) {
+  
+          player.socket.emitError(`There is already something here.`);
+          return;
+  
+        }
+        
+      } else {
+
+        if (this.game.isCentralBuiltNodePosition(x, y)) {
+  
+          player.socket.emitError(`There is already something here.`);
+          return;
+  
+        }
 
       }
 
@@ -82,9 +96,10 @@ class Shop {
         return;
       }
 
-      if (this.game.isAnythingAtPos(x, y)) {
+      if (this.game.isCentralBuiltNodePosition(x, y)) {
 
         player.socket.emitError(`There is already something here.`);
+        return;
 
       }
       
@@ -143,7 +158,7 @@ class Shop {
         return;
       }
 
-      if (this.game.isAnythingAtPos(x, y)) {
+      if (this.game.isCentralBuiltNodePosition(x, y)) {
           
         player.socket.emitError(`There is already something here.`);
         return;
@@ -224,7 +239,7 @@ class Shop {
       },
       tags: [],
       razeCost: { gold: 20 },
-      razeTime: 2 * 1000,
+      razeTime: 5 * 1000,
     });
 
     this.addItem({
@@ -246,7 +261,7 @@ class Shop {
       },
       tags: [],
       razeCost: { gold: 20 },
-      razeTime: 2 * 1000,
+      razeTime: 5 * 1000,
     });
 
     this.addItem({
@@ -268,7 +283,7 @@ class Shop {
       },
       tags: [],
       razeCost: { gold: 20 },
-      razeTime: 2 * 1000,
+      razeTime: 5 * 1000,
     });
 
     this.addItem({
@@ -290,7 +305,7 @@ class Shop {
       },
       tags: [],
       razeCost: { gold: 20 },
-      razeTime: 2 * 1000,
+      razeTime: 5 * 1000,
     });
 
     this.addItem({
@@ -310,7 +325,7 @@ class Shop {
       },
       tags: [],
       razeCost: { gold: 20 },
-      razeTime: 2 * 1000,
+      razeTime: 5 * 1000,
     });
 
     this.addItem({
@@ -328,7 +343,7 @@ class Shop {
       },
       tags: [],
       razeCost: { gold: 50 },
-      razeTime: 10 * 1000,
+      razeTime: 20 * 1000,
     });
 
     this.addItem({
@@ -347,23 +362,26 @@ class Shop {
       },
       tags: [],
       razeCost: {},
-      razeTime: 0.5 * 1000,
+      razeTime: 2 * 1000,
+      isOnBorder: true,
     });
 
   }
 
   addItem(item) {
 
-    let { name, cost, image, type, desc, blacklist, resourceYield, food, combat, unitYield, razeCost, razeTime } = item;
+    let { name, cost, image, type, desc, blacklist, resourceYield, food, combat, unitYield, razeCost, razeTime, isOnBorder } = item;
 
     if (!unitYield) unitYield = 0;
 
     if (!razeCost) razeCost = {};
     if (!razeTime) razeTime = 0;
+    
+    if (isOnBorder == null) isOnBorder = false;
 
     this.items.push({
       id: nanoid(),
-      name, cost, image, type, desc, blacklist, resourceYield, food, combat, unitYield, razeCost, razeTime
+      name, cost, image, type, desc, blacklist, resourceYield, food, combat, unitYield, razeCost, razeTime, isOnBorder
     });
 
   }
