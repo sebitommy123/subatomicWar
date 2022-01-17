@@ -254,3 +254,15 @@ export function canWalkOnPosition(x, y) {
   return getLandTypeAtPosition(x, y).canWalk;
 
 }
+
+export function getAllFriendlyTiles(pid) {
+
+  const { playerId } = getExternalState();
+
+  if (pid == null) pid = playerId;
+
+  return filterAllPositions(function(x, y) {
+    return isFriendlyTerritory(x, y, pid);
+  });
+
+}

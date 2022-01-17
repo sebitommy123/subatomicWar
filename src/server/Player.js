@@ -1,11 +1,18 @@
 const { nanoid } = require('nanoid');
+const BotAgent = require('./BotAgent');
 
 class Player {
 
-  constructor(game, socket, color, startingResources) {
+  constructor(game, socket, color, startingResources, bot=false) {
     this.id = nanoid();
     this.socket = socket;
     this.game = game;
+
+    this.bot = bot;
+    this.botAgent = null;
+    if (bot) {
+      this.botAgent = new BotAgent(this);
+    }
 
     this.gold = startingResources.gold;
     this.oil = startingResources.oil;

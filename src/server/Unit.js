@@ -43,7 +43,17 @@ class Unit {
   }
 
   handleArrival() {
-    const { toX, toY } = this.vagrantData;
+    const { toX, toY, finalX, finalY } = this.vagrantData;
+
+    if (finalX != toX || finalY != toY) {
+
+      let success = this.game.addVagrantUnit(this.player, toX, toY, this.quantity, finalX, finalY);
+      if (success) {
+        this.remove();
+        return;
+      }
+
+    }
 
     const unitAtDestination = this.game.getUnitAtPosition(toX, toY);
     

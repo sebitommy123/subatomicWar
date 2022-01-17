@@ -28,7 +28,7 @@ export function getValidTilesMoveUnit(fromX, fromY) {
       };
 
       return {
-        x, y, valid: true, color: "rgba(200, 255, 200, 255)", r: "Will take several movements to reach.", "e": "Far"
+        x, y, valid: true, color: "rgba(200, 255, 200, 255)"
       };
 
     }

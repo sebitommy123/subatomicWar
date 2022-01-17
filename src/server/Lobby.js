@@ -31,6 +31,8 @@ class Lobby {
       startingTroops: 10, //starting troops at starting location
       baseCityGrowth: 8, //turns required for city growth
       damageMultiplier: 0.1, //damage dealt = quantity * damageMultiplier
+      bots: 0, // number of bots to start with
+      botSpeed: 1000, // ms in between bot actions
     };
 
   }

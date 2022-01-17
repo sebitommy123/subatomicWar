@@ -35,8 +35,23 @@ function pickRandom(list) {
 
 }
 
+function filter2dArray(array, func) {
+
+  let positions = [];
+
+  array.forEach((row, y) => {
+    row.forEach((playerId, x) => {
+      if (func(playerId, x, y)) positions.push({ x, y })
+    });
+  });
+
+  return positions;
+
+}
+
 module.exports = {
   htmlentities,
   colors,
-  pickRandom
+  pickRandom,
+  filter2dArray,
 }

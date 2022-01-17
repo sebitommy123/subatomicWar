@@ -30,5 +30,5 @@ function getEmptyPositions(territory) {
 
 module.exports = {
   generateEmptyTerritory,
-  getEmptyPositions
+  getEmptyPositions,
 }

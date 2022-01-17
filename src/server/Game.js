@@ -8,9 +8,10 @@ const { generateEmptyTerritory, getEmptyPositions } = require("./territory");
 const { generateRandomLand, landTypes } = require("./land");
 const Constants = require("../shared/constants");
 const Joi = require("joi");
-const { colors, pickRandom } = require("./utils");
-const { isAdjescent, isIsolatedPosition } = require("../shared/utils");
+const { colors, pickRandom, filter2dArray } = require("./utils");
+const { isAdjescent, isIsolatedPosition, pathfind } = require("../shared/utils");
 const { Shop } = require("./Shop");
+const BotSocket = require("./BotSocket");
 
 class Game {
 
@@ -23,7 +24,12 @@ class Game {
 
     this.gridDimensions = config.gridDimensions;
 
-    this.players = playerSockets.map((s, i) => new Player(this, s, colors[i], config.startingResources));
+    this.players = playerSockets.map((s, i) => new Player(this, s, colors[i], config.startingResources, false));
+
+    for (let i = 0; i < config.bots; i++) {
+      let bot = new Player(this, new BotSocket(), colors[this.players.length + i], config.startingResources, true);
+      this.players.push(bot);
+    }
 
     this.territory = generateEmptyTerritory(this.gridDimensions.width, this.gridDimensions.height);
     this.land = generateRandomLand(this.gridDimensions.width, this.gridDimensions.height);
@@ -45,6 +51,18 @@ class Game {
 
   getStartingPositions(playerId=null) {
     return this.players.filter(p => p.id != playerId).map(p => p.startingPos).filter(s => s != null);
+  }
+
+  getHumanPlayers() {
+
+    return this.players.filter(p => !p.bot);
+
+  }
+
+  getBotPlayers() {
+
+    return this.players.filter(p => p.bot);
+
   }
 
   setupPregame(waitTime) {
@@ -102,6 +120,8 @@ class Game {
     this.spawnInitialUnits();
 
     this.registerGameEvents();
+
+    this.setupBotCycle();
 
     this.sendSyncUpdate();
 
@@ -161,6 +181,44 @@ class Game {
       }
 
     });
+  }
+
+  setupBotCycle() {
+
+    this.getBotPlayers().forEach(bot => {
+
+      let botAgent = bot.botAgent;
+
+      botAgent.handleGameStarted();
+
+    });
+
+    this.botLoop();
+
+  }
+
+  botLoop() {
+
+    let anyActions = false;
+
+    this.getBotPlayers().forEach(bot => {
+
+      let botAgent = bot.botAgent;
+
+      let performedAction = botAgent.chanceToPerformAction();
+
+      if (performedAction) {
+        anyActions = true;
+      }
+
+    });
+    
+    if (anyActions) {
+      this.sendSyncUpdate();
+    }
+
+    setTimeout(this.botLoop.bind(this), 100);
+
   }
 
   registerGameEvents() {
@@ -306,12 +364,20 @@ class Game {
 
     if (fromUnit.player.id !== player.id) return;
 
-    if(!isAdjescent(from, to)) return;
-
     if (!landTypes[this.land[to.y][to.x]].canWalk) return;
+
+    if (!isAdjescent(from, to)) {
+      let playerAtPos = this.getPlayerAtPosition(to.x, to.y);
+      if (playerAtPos == null) return;
+      if (playerAtPos.id !== player.id) return;
+    }
 
     let leftOver = fromUnit.quantity - quantity;
     if (leftOver < 0) return;
+
+    let success = this.addVagrantUnit(player, from.x, from.y, quantity, to.x, to.y);
+
+    if (!success) return;
 
     if (leftOver == 0) {
       fromUnit.remove();
@@ -319,13 +385,24 @@ class Game {
       fromUnit.quantity = leftOver;
     }
 
-    this.addVagrantUnit(player, from.x, from.y, quantity, to.x, to.y);
-
     this.sendSyncUpdate();
 
   }
 
   addVagrantUnit(player, x, y, quantity, toX, toY, retreating=false) {
+
+    if (x == toX && y == toY) return false;
+
+    let path = [{x: toX, y: toY}];
+
+    if (!isAdjescent({x, y}, {x: toX, y: toY})) {
+      console.log("Not adjescent", x, y, toX, toY);
+      path = pathfind({x, y}, {x: toX, y: toY}, filter2dArray(this.territory, pid => pid === player.id));
+
+      if (path == null) return false;
+
+      path.splice(0, 1);
+    }
 
     let moveTime = this.config.vagrantMoveTime.neutral;
 
@@ -342,10 +419,12 @@ class Game {
     }
 
     let vagrantUnit = new Unit(this, player, x, y, quantity, true, {
-      toX,
-      toY,
+      toX: path[0].x,
+      toY: path[0].y,
       start: Date.now(),
       end: Date.now() + moveTime,
+      finalX: toX,
+      finalY: toY,
     }, retreating);
 
     this.vagrantUnits.push(vagrantUnit);
@@ -357,6 +436,12 @@ class Game {
       this.sendSyncUpdate();
 
     }, moveTime);
+
+    return true;
+  }
+
+  inBounds(x, y) {
+    return x >= 0 && x < this.config.gridDimensions.width && y >= 0 && y < this.config.gridDimensions.height;
   }
 
   getUnitAtPosition(x, y) {

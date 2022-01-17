@@ -113,6 +113,65 @@ function pluralize(word) {
 
 }
 
+function pathfind(from, to, validPositions) {
+
+  let open = [{
+    path: [],
+    position: from,
+    distance: 0
+  }];
+
+  let closed = [];
+
+  let result = null;
+
+  while (open.length > 0) {
+
+    let current = open.shift();
+
+    if (current.position.x == to.x && current.position.y == to.y) {
+      result = current;
+      break;
+    }
+
+    let adjescentPositions = getAdjescentPositions(current.position);
+
+    adjescentPositions.forEach(position => {
+
+      if (getPositionInPositionList(position, validPositions) == null) return;
+
+      let elm = getPositionInPositionList(position, closed);
+
+      if (elm) return;
+
+      open.push({
+        path: [...current.path, current.position],
+        position: position,
+        distance: current.distance + 1
+      });
+
+    });
+
+    closed.push(current.position);
+
+  }
+
+  if (result == null) {
+    return null;
+  }
+
+  return [...result.path, to];
+
+}
+
+function randomIntBetween(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function randomNumberBetween(min, max) {
+  return Math.random() * (max - min) + min;
+}
+
 module.exports = {
   isAdjescent,
   getAdjescentPositions,
@@ -122,5 +181,8 @@ module.exports = {
   getPositionInPositionList,
   resolveTerritoryBlacklist,
   getRingPositions,
-  pluralize
+  pluralize,
+  pathfind,
+  randomIntBetween,
+  randomNumberBetween,
 }

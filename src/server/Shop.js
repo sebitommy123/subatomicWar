@@ -349,7 +349,7 @@ class Shop {
     this.addItem({
       name: "Trench",
       desc: "Better defensive position for your units",
-      cost: { wood: 20 },
+      cost: { wood: 10 },
       image: "trenchFull.png",
       borderImage: "trench.png",
       type: "structure",
@@ -407,8 +407,12 @@ class Shop {
 
   }
 
+  getItemByName(itemName) {
+    return this.items.find(item => item.name.toLowerCase() === itemName.toLowerCase());
+  }
+
   canPlaceBuiltNode(itemName, x, y) {
-    let item = this.items.find(item => item.name.toLowerCase() === itemName.toLowerCase());
+    let item = this.getItemByName(itemName);
 
     let { allowed } = resolveTerritoryBlacklist(item.blacklist, this.game.land[y][x]);
 

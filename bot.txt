@@ -1,0 +1,21 @@
+
+ - Buy as many units as possible
+ - Ensure aura basic
+	Take all land from neutral territory inside aura
+ - Build buildings (Use wood)
+	Mine -> Lumbermill -> Farm -> Mine -> Lumbermill -> Farm -> Mine -> Barracks -> Barracks -> Mine
+ - Destroy useless farms
+ - Build trenches randomly at borders
+----Agressive:
+ - Seize building land
+	Take a building that is mine but in someone else's territory
+ - Seize aura land
+	Take land that is in my aura
+----Offsensive
+ - Attack neighboring resource tile
+ - 
+ 
+
+When under attack:
+ - Move units
+

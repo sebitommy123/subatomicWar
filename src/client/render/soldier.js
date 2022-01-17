@@ -1,14 +1,16 @@
 import Constants from "../../shared/constants";
+import { isAdjescent, pathfind } from "../../shared/utils";
 import { getAsset } from "../assets";
 import { emit } from "../networking";
 import { RenderConstants, ctx } from "../render";
 import { getExternalState, getInternalState, mutateInternalState } from "../state";
 import { gameMouseX, gameMouseY, mouseClicked, registerClick, registerDraggableSurface, registerNextMouseUpHandler, registerNextUnhandledClickHandler, registerScrollableSurface } from "../userInput";
 import { getFreeCost } from "../utils/cost";
-import { canUnitMoveTo, enemyUnitAtPosition, getQuantityAtPosition, getUnitAtPosition, getUnitById, isFriendlyTerritory } from "../utils/game";
+import { canUnitMoveTo, enemyUnitAtPosition, getAllFriendlyTiles, getQuantityAtPosition, getUnitAtPosition, getUnitById, isFriendlyTerritory } from "../utils/game";
 import { getDirectionFromPosToPos, getHoveringTileCoords, mouseInRect, movePositionInDir, positionCenteredAt } from "../utils/geometry";
 import { decayingQuantity, interpolateXYC, sinusoidalTimeValue } from "../utils/math";
 import { getValidTilesMoveUnit } from "../utils/tileValidation";
+import { drawPath } from "./highlyGeneral";
 import { setPlacing } from "./placing";
 import { getQuantityBarQuantity } from "./quantityBar";
 
@@ -297,7 +299,16 @@ function renderMovingUnit(x, y, quantity) {
       c = 1;
     }
   }
+
+  if (!isAdjescent({x, y}, {x: unit.x, y: unit.y})) {
   
+    let path = pathfind({x: unit.x, y: unit.y}, {x, y}, getAllFriendlyTiles());
+
+    if (path != null) {
+      drawPath(path);
+    }
+
+  }
 
   return renderSoldierAndQuantity({ ...pos, c }, renderQuantity, true)
 }
