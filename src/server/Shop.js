@@ -223,7 +223,7 @@ class Shop {
     this.addItem({
       name: "Gold mine",
       desc: "Yields 5 gold per turn",
-      cost: { wood: 100 },
+      cost: { wood: 200 },
       image: "mine.png",
       type: "building",
       resourceYield: { gold: 5 },
@@ -238,14 +238,14 @@ class Shop {
         oil: { allowed: false },
       },
       tags: [],
-      razeCost: { gold: 20 },
-      razeTime: 5 * 1000,
+      razeCost: { gold: 50 },
+      razeTime: 20 * 1000,
     });
 
     this.addItem({
       name: "Lumber mill",
       desc: "Yields 5 wood per turn",
-      cost: { wood: 80 },
+      cost: { wood: 160 },
       image: "lumbermill.png",
       type: "building",
       resourceYield: { wood: 5 },
@@ -260,14 +260,14 @@ class Shop {
         oil: { allowed: false },
       },
       tags: [],
-      razeCost: { gold: 20 },
-      razeTime: 5 * 1000,
+      razeCost: { gold: 50 },
+      razeTime: 20 * 1000,
     });
 
     this.addItem({
       name: "Farm",
       desc: "Doubles city growth speed",
-      cost: { wood: 140 },
+      cost: { wood: 300 },
       image: "farm.png",
       type: "building",
       resourceYield: {},
@@ -282,14 +282,14 @@ class Shop {
         oil: { allowed: false },
       },
       tags: [],
-      razeCost: { gold: 20 },
-      razeTime: 5 * 1000,
+      razeCost: { gold: 50 },
+      razeTime: 20 * 1000,
     });
 
     this.addItem({
       name: "Oil rig",
       desc: "Yields 5 oil per turn",
-      cost: { wood: 200 },
+      cost: { wood: 400 },
       image: "oilRig.png",
       type: "building",
       resourceYield: { oil: 5 },
@@ -304,14 +304,14 @@ class Shop {
         oil: { allowed: true },
       },
       tags: [],
-      razeCost: { gold: 20 },
-      razeTime: 5 * 1000,
+      razeCost: { gold: 50 },
+      razeTime: 20 * 1000,
     });
 
     this.addItem({
       name: "Barracks",
       desc: "Trains 3 units per turn",
-      cost: { wood: 130 },
+      cost: { wood: 500 },
       image: "barracks.png",
       type: "building",
       resourceYield: {},
@@ -324,17 +324,17 @@ class Shop {
         oil: { allowed: false },
       },
       tags: [],
-      razeCost: { gold: 20 },
-      razeTime: 5 * 1000,
+      razeCost: { gold: 50 },
+      razeTime: 20 * 1000,
     });
 
     this.addItem({
       name: "City",
       desc: "Settle a new city",
-      cost: { wood: 100, gold: 100 },
+      cost: { wood: 150, gold: 150 },
       image: "city.png",
       type: "city",
-      resourceYield: { gold: 10, wood: 5 },
+      resourceYield: {},
       food: 0,
       combat: { attack: 1.5, defense: 1.5 },
       blacklist: {
@@ -342,14 +342,14 @@ class Shop {
         oil: { allowed: false },
       },
       tags: [],
-      razeCost: { gold: 50 },
+      razeCost: { gold: 100 },
       razeTime: 20 * 1000,
     });
 
     this.addItem({
       name: "Trench",
       desc: "Better defensive position for your units",
-      cost: { wood: 10 },
+      cost: { wood: 25, gold: 25 },
       image: "trenchFull.png",
       borderImage: "trench.png",
       type: "structure",

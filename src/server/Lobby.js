@@ -19,7 +19,7 @@ class Lobby {
       waitTime: 15, // time for players to choose starting positions
       dayLength: 5 * 1000, // length of a day in milliseconds
       startingResources: { gold: 0, wood: 50, oil: 0 }, // starting resources
-      resourcesPerDay: { gold: 0, wood: 0, oil: 0 }, // resources per day naturally
+      resourcesPerDay: { gold: 10, wood: 10, oil: 0 }, // resources per day naturally
       vagrantMoveTime: {
         neutral: 2000,
         enemy: 4000,
@@ -31,7 +31,7 @@ class Lobby {
       startingTroops: 10, //starting troops at starting location
       baseCityGrowth: 8, //turns required for city growth
       damageMultiplier: 0.1, //damage dealt = quantity * damageMultiplier
-      bots: 0, // number of bots to start with
+      bots: 1, // number of bots to start with
       botSpeed: 1000, // ms in between bot actions
     };
 
