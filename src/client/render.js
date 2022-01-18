@@ -442,19 +442,6 @@ function renderTerritory() {
       }
     });
   });
-
-  territory.forEach((row, y) => {
-    row.forEach((playerId, x) => {
-      if (playerId) {        
-        let color = getById(playerId, players).color;
-        ctx.fillStyle = color;
-
-        ctx.globalAlpha = 0.2;
-        ctx.fillRect(x * RenderConstants.CELL_WIDTH, y * RenderConstants.CELL_HEIGHT, RenderConstants.CELL_WIDTH, RenderConstants.CELL_HEIGHT);
-        ctx.globalAlpha = 1;
-      }
-    });
-  });
   
 }
 
