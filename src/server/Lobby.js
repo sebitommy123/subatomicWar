@@ -13,8 +13,8 @@ class Lobby {
 
     this.config = {
       gridDimensions: { // size of the playing area in tiles
-        width: 9,
-        height: 9
+        width: 11,
+        height: 11
       },
       waitTime: 15, // time for players to choose starting positions
       dayLength: 5 * 1000, // length of a day in milliseconds
@@ -31,15 +31,15 @@ class Lobby {
       startingTroops: 10, //starting troops at starting location
       baseCityGrowth: 8, //turns required for city growth
       damageMultiplier: 0.1, //damage dealt = quantity * damageMultiplier
-      bots: 1, // number of bots to start with
+      bots: 0, // number of bots to start with
       botSpeed: 1000, // ms in between bot actions
       naturalCombatBonus: { // bonus combat multipliers by default
         attack: 1, defense: 1.5
       },
       gameType: {
         type: "deathmatch",
-        gracePeriod: 240, // time in days before deathmatch starts
-        duration: 120, // time in days of deathmatch duration
+        gracePeriod: 200, // time in days before deathmatch starts
+        duration: 100, // time in days of deathmatch duration
         deathmatchMultipliers: {
           attack: 1, defense: 1,
         }

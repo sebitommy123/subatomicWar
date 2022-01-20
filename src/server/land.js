@@ -48,7 +48,7 @@ function generateRandomLand(width, height) {
   }
 
   // iterate 10 times
-  for (let i = 0; i < 20; i++) {
+  for (let i = 0; i < 30; i++) {
 
     // choose a random position
     let x = Math.floor(Math.random() * width);
@@ -70,7 +70,7 @@ function generateRandomLand(width, height) {
     }
 
     let resource = "forest";
-    if (i > 10) resource = "desert";
+    if (i > 20) resource = "desert";
 
     // change the land type of the neighbors
     neighbors.forEach(neighbor => {
@@ -83,7 +83,7 @@ function generateRandomLand(width, height) {
   }
 
   // iterate 7 times
-  for (let i = 0; i < 7; i++) {
+  for (let i = 0; i < 14; i++) {
     // choose a random position
     let x = Math.floor(Math.random() * width);
     let y = Math.floor(Math.random() * height);
@@ -110,7 +110,7 @@ function generateRandomLand(width, height) {
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
       if (Math.abs(x - middleX) + Math.abs(y - middleY) < 3) {
-        //land[y][x] = "water";
+        land[y][x] = "water";
       }
     }
   }

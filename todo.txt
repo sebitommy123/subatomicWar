@@ -73,6 +73,7 @@ TODO
  - make sure you cant stop a city razing if you have just a mine
  - press escape to cancel to cancel
  - make soldier hitbox larger
+ - bigger blobs of deserts, less blobs overall
 
 
 Future updates:
