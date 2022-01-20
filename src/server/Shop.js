@@ -421,8 +421,6 @@ class Shop {
 
   handleOnBuyFromShop(player, input) {
 
-    console.log("Buying from shop");
-
     let itemId = input.itemId;
 
     let item = this.items.find(item => item.id === itemId);

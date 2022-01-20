@@ -154,7 +154,9 @@ class Unit {
   }
 
   getMultiplier(name) {
-    let multiplier = landTypes[this.landBelow()].combat[name];
+    let multiplier = this.game.getNaturalMultipliers()[name];
+
+    multiplier *= landTypes[this.landBelow()].combat[name];
 
     this.builtNodesBelow().forEach(node => {
       if (node.type.combat[name]) {

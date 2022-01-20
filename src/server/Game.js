@@ -39,6 +39,8 @@ class Game {
     this.buildings = [];
     this.structures = [];
 
+    this.gameStart = null;
+    this.day = null;
     this.dayStart = null;
     
     this.shop = null;
@@ -108,6 +110,7 @@ class Game {
   startGame() {
 
     this.stage = "game";
+    this.gameStart = Date.now();
 
     this.day = 0;
 
@@ -515,9 +518,55 @@ class Game {
       city.tick();
     });
 
+    this.doGeneralGameEvents();
+
     this.sendSyncUpdate();
 
     setTimeout(this.tickGame.bind(this), this.config.dayLength);
+
+  }
+
+  doGeneralGameEvents() {
+
+    if (this.config.gameType.type == "deathmatch") {
+     
+      if (this.day == this.config.gameType.gracePeriod) {
+
+        console.log("Death match has started!");
+
+        this.players.forEach(p => p.socket.emitError("Death match has started!"));
+
+      }
+
+      if (this.day == this.config.gameType.gracePeriod + this.config.gameType.duration) {
+
+        console.log("Game over");
+
+        this.players.forEach(p => p.socket.emitError("Game over"));
+
+      }
+
+    }
+
+  }
+
+  getNaturalMultipliers() {
+
+    if (this.config.gameType.type == "deathmatch") {
+     
+      if (this.day >= this.config.gameType.gracePeriod) {
+
+        return this.config.gameType.deathmatchMultipliers;
+
+      } else {
+
+        return this.config.naturalCombatBonus;
+
+      }
+
+    }
+    
+    return this.config.naturalCombatBonus;
 
   }
 

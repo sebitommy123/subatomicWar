@@ -17,7 +17,7 @@ class Lobby {
         height: 9
       },
       waitTime: 15, // time for players to choose starting positions
-      dayLength: 5 * 1000, // length of a day in milliseconds
+      dayLength: 0.5 * 1000, // length of a day in milliseconds
       startingResources: { gold: 0, wood: 100, oil: 0 }, // starting resources
       resourcesPerDay: { gold: 10, wood: 10, oil: 0 }, // resources per day naturally
       vagrantMoveTime: {
@@ -33,6 +33,18 @@ class Lobby {
       damageMultiplier: 0.1, //damage dealt = quantity * damageMultiplier
       bots: 1, // number of bots to start with
       botSpeed: 1000, // ms in between bot actions
+      naturalCombatBonus: { // bonus combat multipliers by default
+        attack: 1, defense: 1.5
+      },
+      gameType: {
+        type: "deathmatch",
+        gracePeriod: 240, // time in days before deathmatch starts
+        duration: 120, // time in days of deathmatch duration
+        deathmatchMultipliers: {
+          attack: 1, defense: 1,
+        }
+      },
+      winAttributes: ["cities", "land", "units"], // attributes that determine a win, in order of decreasing importance
     };
 
   }

@@ -79,12 +79,9 @@ class BotAgent {
 
     if (this.nextAction > Date.now()) return false;
 
-    console.log("Performing bot action");
-
     const tilesUnderAttack = this.getTilesUnderAttack();
 
     if (tilesUnderAttack.length > 0) {
-      console.log("Oh no! Gotta defend!");
       defend(this, tilesUnderAttack);
     } else {
       const layers = [buyUnits, ensureAuraBasic, buildBuildings, removeUselessFarms];

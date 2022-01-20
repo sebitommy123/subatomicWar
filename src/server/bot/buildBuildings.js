@@ -12,8 +12,6 @@ function getCurrentStep(city, order) {
 
   let result;
 
-  console.log(typeList);
-
   order.forEach((nextBuilding, step) => {
 
     if (result != null) return;
@@ -101,8 +99,6 @@ function buildBuildings(agent) {
     let order = getOrder(agent, city);
 
     let step = getCurrentStep(city, order);
-
-    console.log(order, step);
 
     if (step == null) {
 
