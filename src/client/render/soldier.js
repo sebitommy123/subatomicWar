@@ -1,6 +1,6 @@
 import Constants from "../../shared/constants";
 import { isAdjescent, pathfind } from "../../shared/utils";
-import { getAsset } from "../assets";
+import { getAsset, getSpritesheet } from "../assets";
 import { emit } from "../networking";
 import { RenderConstants, ctx } from "../render";
 import { getExternalState, getInternalState, mutateInternalState } from "../state";
@@ -65,9 +65,9 @@ function getUnitGoal(unitData) {
   
 }
 
-export function renderSoldierAndQuantity(posXYC, quantity, occilate=false, changeInUnits=0, changeInUnitsProgress=1, dir) {
+export function renderSoldierAndQuantity(posXYC, quantity, occilate=false, changeInUnits=0, changeInUnitsProgress=1, dir=null) {
 
-  let rect = renderSoldier(posXYC, occilate);
+  let rect = renderSoldier(posXYC, occilate, dir);
 
   let fontSize = 8 - 3 * posXYC.c;
 
@@ -121,11 +121,26 @@ function renderLabel(text, labelX, labelY, fontSize=8, color="#404040") {
   ctx.fillText(text, labelX, labelY - fontSize/2 - marginBottom);
 }
 
-export function renderSoldier(posXYC, occilate=false) {
+export function renderSoldier(posXYC, occilate=false, animateDirection=null) {
 
   const { x, y, c } = posXYC;
 
-  const imgAsset = getAsset("soldier");
+  let imgAsset = getAsset("soldier");
+
+  switch (animateDirection) {
+    case "top":
+      imgAsset = getSpritesheet("soldierWalkingUp");
+      break;
+    case "bottom":
+      imgAsset = getSpritesheet("soldierWalkingDown");
+      break;
+    case "left":
+      imgAsset = getSpritesheet("soldierWalkingLeft");
+      break;
+    case "right":
+      imgAsset = getSpritesheet("soldierWalkingRight");
+      break;
+  }
 
   const padding = RenderConstants.SOLDIER_PADDING + RenderConstants.SOLDIER_PADDING * 3 * c;
 
@@ -137,7 +152,11 @@ export function renderSoldier(posXYC, occilate=false) {
 
   if(occilate) ctx.globalAlpha = sinusoidalTimeValue(0.5, 1, 100);
 
-  ctx.drawImage(imgAsset, imgX, imgY, imgWidth, imgHeight);
+  if (animateDirection != null) {
+    ctx.animateSheet(imgAsset, imgX, imgY, imgWidth, imgHeight, 300);
+  } else {
+    ctx.drawImage(imgAsset, imgX, imgY, imgWidth, imgHeight);
+  }
 
   if(occilate) ctx.globalAlpha = 1;
 

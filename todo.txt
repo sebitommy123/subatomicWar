@@ -24,8 +24,11 @@ DONE
  - trench defense bonus to 1.5x
  - trenches go on top of other buildings and structures
  - unit mapping (you can send units somewhere and they will move there over time)
+ - double all wood costs
+ - double natural wood production
+ - cities don't produce anything
+ - add spritesheets, make soldiers move
 
- 
 TODO
  
  - split render up
@@ -35,11 +38,9 @@ TODO
  - make land and buildings passive clickable
 	Gives more information about the land and building in general, and this building in specific
  - when you click on a unit, show a panel on the left with more info
- - add spritesheets, make soldiers move
  - trench cost down to 15 wood
  - mines and lumber mill negative multipliers up to 0.6
  - make a panel to see what a building does before placing
- - cities produce 1 gold and 1 wood per turn
  - get sprites for more tiles, items and buildings
  - tell user when they have been disconnected from server
  - remove games and lobbies if they are empty
@@ -57,19 +58,42 @@ TODO
  - make it clear when your soldiers have a fighting advantage
 	Just hovering your soldier to prepare to fight should tell you
  - add bots
- 
- 
- 
+ - natural defensive bonus decreases to 1 from 1.5 over time
+ - allow anchoring of action bar
+ - make placing tile hovering options clearer
+ - move tip and other messages all larger and to the top
+ - commonwealth dashboard of yourself describing your situation
+ - show all players on the left, with dashboard / summary of how they're doing
+ - naming cities (they get auto-named)
+ - notice board (x took over city, and other events)
+ - trenches should not cover border
+ - improve border colors
+ - population of cities is not clear
+ - it tells you when enemy units arrive at your tile
+ - make sure you cant stop a city razing if you have just a mine
+ - press escape to cancel to cancel
+ - make soldier hitbox larger
+
+
 Future updates:
  - add sound effects and music
+ - tutorial
+ - login for addiction
  - Military industrial complex
 	Barracks, Fortification, Missile silo, Watchtower, Oil
  - Building upgrades
  - Trading update
 	Markets and influence
  - Mobility update
-	Airports, roads, railroads
+	Airports, roads, railroads, harbor
+ - Multi-tile structures
+ - Boosters
+	They appear in tiles and must be harvested, give 1000 gold or wood
+	Everyone knows, so tile becomes contentious
  - Poltical update
+	Flags (Everyone has a flag)
+	Diplomatic chat
+	Place down flag on empty tile
 	You choose between Centrism, Capitalism, Communism, Anarchy and Dictatorship
 		Centrism is like not choosing anything. Essentially an opt-out.
 		If you have the same ideology as someone else, your attacks will be far less effective

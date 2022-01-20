@@ -1,6 +1,7 @@
-const { isAdjescent, randomNumberBetween } = require("../shared/utils");
+const { isAdjescent, randomNumberBetween, getPositionInPositionList } = require("../shared/utils");
 const buildBuildings = require("./bot/buildBuildings");
 const buyUnits = require("./bot/buyUnits");
+const defend = require("./bot/defend");
 const ensureAuraBasic = require("./bot/ensureAuraBasic");
 const removeUselessFarms = require("./bot/removeUselessFarms");
 
@@ -51,14 +52,26 @@ class BotAgent {
     let tiles = this.game.vagrantUnits.map(unit => {
       if (unit.player.id == this.player.id) return null;
       
-      let p = this.game.getPlayerAt(unit.vagrantData.toX, unit.vagrantData.toY);
+      let p = this.game.getPlayerAtPosition(unit.vagrantData.toX, unit.vagrantData.toY);
       if (p == null) return null;
       if (p.id != this.player.id) return null;
 
       return {x: unit.vagrantData.toX, y: unit.vagrantData.toY, quantity: unit.quantity};
     }).filter(t => t != null);
 
-    
+    let tilesUnderAttack = [];
+
+    tiles.forEach(t => {
+      let pos = getPositionInPositionList(t, tilesUnderAttack);
+
+      if (pos == null) {
+        tilesUnderAttack.push(t);
+      } else {
+        pos.quantity += t.quantity;
+      }
+    });
+
+    return tilesUnderAttack;
 
   }
 
@@ -68,14 +81,21 @@ class BotAgent {
 
     console.log("Performing bot action");
 
-    const layers = [buyUnits, ensureAuraBasic, buildBuildings, removeUselessFarms];
-    let done = false;
+    const tilesUnderAttack = this.getTilesUnderAttack();
 
-    layers.forEach(layer => {
-      if (done) return;
+    if (tilesUnderAttack.length > 0) {
+      console.log("Oh no! Gotta defend!");
+      defend(this, tilesUnderAttack);
+    } else {
+      const layers = [buyUnits, ensureAuraBasic, buildBuildings, removeUselessFarms];
+      let done = false;
 
-      done = layer(this);
-    });
+      layers.forEach(layer => {
+        if (done) return;
+
+        done = layer(this);
+      });
+    }    
 
     this.nextAction = Date.now() + randomNumberBetween(this.config.botSpeed * 0.4, this.config.botSpeed * 1.8);
 

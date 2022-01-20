@@ -116,6 +116,26 @@ export default class BetterCtx {
     }
   }
 
+  drawFrame(sheet, x, y, width, height, frameNum) {
+    const { asset, frames } = sheet;
+
+    let frame = frames[frameNum];
+
+    if (frame == null) return;
+
+    this.drawImage(asset, frame.x, frame.y, frame.width, frame.height, x, y, width, height);
+  }
+
+  animateSheet(sheet, x, y, width, height, frameTime) {
+    
+    let frameCount = sheet.frames.length;
+
+    let frame = (Math.floor(Date.now() / frameTime)) % frameCount;
+
+    this.drawFrame(sheet, x, y, width, height, frame);
+
+  }
+
   fillText(text, x, y) {
     this.ctx.fillText(text, this.xA(x), this.yA(y));
   }
