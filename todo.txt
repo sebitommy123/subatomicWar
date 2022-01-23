@@ -28,52 +28,56 @@ DONE
  - double natural wood production
  - cities don't produce anything
  - add spritesheets, make soldiers move
+- add cursor becoming a pointer when you can click, add more hover animations
+Only active clickable surfaces show a cursor
+Passive clickable surfaces don't
+ - population of cities is not clear
+ - improve border colors
+ - trenches should not cover border
+ - make soldier hitbox larger
+ - press escape to cancel to cancel
+ - remove city growth days estimation upon reaching 8
+ - make placing tile hovering options clearer
 
 TODO
- 
- - split render up
- - add cursor becoming a pointer when you can click, add more hover animations
-	Only active clickable surfaces show a cursor
-	Passive clickable surfaces don't
- - make land and buildings passive clickable
-	Gives more information about the land and building in general, and this building in specific
- - when you click on a unit, show a panel on the left with more info
- - trench cost down to 15 wood
- - mines and lumber mill negative multipliers up to 0.6
- - make a panel to see what a building does before placing
- - get sprites for more tiles, items and buildings
+
+Features:
+ - top left panel
+		Leaderboard (Shows players in order of who is winning)
+		Fight prognostic (Tells you who has the advantage going into a fight)
+		Info panel (Shows you information, like a mini wikipedia)
+			Can right click + info on land, unit or builtNode passively
+			Show panel when placing unit or builtNode
+		Empire panel
+			When you click on someone (including you) on the leaderboard
+			Commonwealth dashboard with summary
+ - bottom left chat
+			Notice board (x took over city, and other events)
+			It tells you when enemy units arrive at your tile
  - tell user when they have been disconnected from server
- - remove games and lobbies if they are empty
- - create lobby system
- - add private lobbies
- - separate server into two
  - show name of empire somewhere
  - show soldier alliegance somewhere
  - place unit / building / city shortcuts
- - someone is attacking you notification
- - if someone is moving into your tile, you cant move into theirs
+ - improve lobby system
+	 - remove games and lobbies if they are empty
+	 - create lobby system
+	 - add private lobbies
  - add income per turn
  - add losing condition
- - remove city growth days estimation upon reaching 8
- - make it clear when your soldiers have a fighting advantage
-	Just hovering your soldier to prepare to fight should tell you
- - add bots
- - natural defensive bonus decreases to 1 from 1.5 over time
- - allow anchoring of action bar
- - make placing tile hovering options clearer
- - move tip and other messages all larger and to the top
- - commonwealth dashboard of yourself describing your situation
- - show all players on the left, with dashboard / summary of how they're doing
+ - finish bots
  - naming cities (they get auto-named)
- - notice board (x took over city, and other events)
- - trenches should not cover border
- - improve border colors
- - population of cities is not clear
- - it tells you when enemy units arrive at your tile
- - make sure you cant stop a city razing if you have just a mine
- - press escape to cancel to cancel
- - make soldier hitbox larger
  - bigger blobs of deserts, less blobs overall
+
+Refactoring:
+ - split render up
+ - separate server into two
+
+Waiting:
+ - get sprites for more tiles, items and buildings
+
+Bug fixes:
+ - if someone is moving into your tile, you cant move into theirs
+ - make sure you cant stop a city razing if you have just a mine
 
 
 Future updates:

@@ -2,8 +2,9 @@ import React from 'react'
 import Constants from '../../shared/constants';
 import { getAsset } from '../assets';
 import { emit } from '../networking';
+import { drawAllCityAuras, drawAuraAt, drawCitiesWithPopulationEmphasis } from '../render/city';
 import { setPlacing } from '../render/placing';
-import { drawAllCityAuras, drawAuraAt, drawBuilding } from '../render/property';
+import { drawBuilding } from '../render/property';
 import { renderPlacingSoldier, renderSoldierAndQuantity } from '../render/soldier';
 import { mutateInternalState } from '../state';
 import { getQuantityAtPosition, getUnitAtPosition, ownedUnitAtPosition } from '../utils/game';
@@ -61,6 +62,12 @@ function Item({ id, name, imageSrc, asset, cost, type, description, objectType }
           drawAuraAt(x, y);
           drawAllCityAuras();
 
+          return drawBuilding(assetObj, x, y);
+        }
+      } else if (type === "building") {
+        renderFunc = (x, y) => {
+          drawCitiesWithPopulationEmphasis();
+          
           return drawBuilding(assetObj, x, y);
         }
       }

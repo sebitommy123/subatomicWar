@@ -8,12 +8,14 @@ import Constants from '../shared/constants';
 import { hydrateActionBar } from './actionBarController';
 import { hydrateStageInfo } from './stageInfo';
 import { ensureServerSync } from './utils/general';
+import { partialSetup } from './partialSetup';
 
 // initialize the state to something the app won't crash with (screen is enough)
 handleNewState(Constants.initialState);
 
-
 ensureServerSync();
+
+partialSetup();
 
 // start rendering lifecycle
 initRender();
@@ -26,3 +28,4 @@ addUserInputHandlers();
 hydrateActionBar();
 
 hydrateStageInfo();
+

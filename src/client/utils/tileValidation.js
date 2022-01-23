@@ -8,11 +8,11 @@ export function getValidTilesMoveUnit(fromX, fromY) {
   let candidates = mapAllPositions((x, y) => {
 
     if (!canWalkOnPosition(x, y)) return {
-      x, y, valid: false
+      x, y, valid: false, color: "black"
     };
 
     if (x == fromX && y == fromY) return {
-      x, y, valid: false
+      x, y, valid: false, color: "black"
     };
 
     if (isAdjescent({x: fromX, y: fromY}, {x, y})) {
@@ -24,7 +24,7 @@ export function getValidTilesMoveUnit(fromX, fromY) {
     } else {
 
       if (!isFriendlyTerritory(x, y)) return {
-        x, y, valid: false
+        x, y, valid: false, color: "black"
       };
 
       return {
@@ -83,6 +83,8 @@ export function getValidTilesPlaceStructure(objectType) {
 
   candidates = candidates.map(candidate => {
 
+    if (candidate.valid == false) return candidate;
+
     let obj = {
       x: candidate.x,
       y: candidate.y,
@@ -127,11 +129,18 @@ export function getValidTilesPlaceBuilding(objectType) {
   let candidates = getValidTilesPlaceStructure(objectType);
 
   candidates = candidates.map(({x, y, color, r, e, valid}) => {
+
     let city = getCityAuraAtPosition(x, y);
     
-    if (!city) return {x, y, valid: false, r: "No city nearby", e: "Too far", color: "#ff8888"};
+    if (city == null) return {x, y, valid: false, r: "No city nearby", e: "Too far", color: null};
 
-    if (!isFriendlyTerritory(city.x, city.y)) return {x, y, valid: false, r: "City nearby is not yours", e: "Too far", color: "#ff8888"};
+    if (!isFriendlyTerritory(city.x, city.y)) return {x, y, valid: false, r: "City nearby is not yours", e: "Too far", color: "rgba(255, 0, 0, 0.7)"};
+
+    if (valid === false) {
+      color = "rgba(255, 0, 0, 0.7)";
+    } else {
+      color = "#00ff00";
+    }
 
     return {x, y, color, r, e, valid};
   });
@@ -147,6 +156,8 @@ export function getValidTilesPlaceCity(objectType) {
   let candidates = getValidTilesPlaceStructure(objectType);
 
   candidates = candidates.map(pos => {
+    if (pos.valid == false) return pos;
+
     let isIsolated = isIsolatedPosition({x: pos.x, y: pos.y}, cities.map(city => ({x: city.x, y: city.y})));
 
     if (isIsolated) {

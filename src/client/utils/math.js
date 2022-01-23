@@ -3,6 +3,15 @@ export function sinusoidalTimeValue(min, max, period) {
   return (Math.sin(Date.now() / period) + 1) / 2 * (max - min) + min;
 }
 
+export function smoothCurve(from, to, progress) {
+
+  let delta = to - from;
+  let smoothProgress = 1 - (Math.cos(Math.PI * progress) + 1) / 2;
+
+  return from + delta * smoothProgress;
+
+}
+
 export function decayingQuantity(quantity, decay) {
   return Math.cos(decay * Math.PI * 0.7 - Math.PI * 0.2) * quantity;
 }

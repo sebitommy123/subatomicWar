@@ -4,12 +4,13 @@ import { getAsset, getSpritesheet } from "../assets";
 import { emit } from "../networking";
 import { RenderConstants, ctx } from "../render";
 import { getExternalState, getInternalState, mutateInternalState } from "../state";
-import { gameMouseX, gameMouseY, mouseClicked, registerClick, registerDraggableSurface, registerNextMouseUpHandler, registerNextUnhandledClickHandler, registerScrollableSurface } from "../userInput";
+import { gameMouseX, gameMouseY, mouseClicked, registerClick, registerDraggableSurface, registerNextMouseUpHandler, registerNextUnhandledClickHandler, registerScrollableSurface, setHovering } from "../userInput";
 import { getFreeCost } from "../utils/cost";
 import { canUnitMoveTo, enemyUnitAtPosition, getAllFriendlyTiles, getQuantityAtPosition, getUnitAtPosition, getUnitById, isFriendlyTerritory } from "../utils/game";
 import { getDirectionFromPosToPos, getHoveringTileCoords, mouseInRect, movePositionInDir, positionCenteredAt } from "../utils/geometry";
 import { decayingQuantity, interpolateXYC, sinusoidalTimeValue } from "../utils/math";
 import { getValidTilesMoveUnit } from "../utils/tileValidation";
+import { drawCitiesWithPopulationEmphasis } from "./city";
 import { drawPath } from "./highlyGeneral";
 import { setPlacing } from "./placing";
 import { getQuantityBarQuantity } from "./quantityBar";
@@ -277,7 +278,7 @@ export function renderUnit(unit) {
     vagrant
   }), renderQuantity, renderQuantity != quantity, changeInUnits, changeInUnitsProgress);
 
-  rect.width *= 0.5;
+  rect.width *= 0.7;
 
   if (mouseInRect(rect) && renderQuantity == quantity) {
 
@@ -296,6 +297,8 @@ function renderMovingUnit(x, y, quantity) {
   const unit = getUnitById(movingObject.id);
 
   if (!unit) return;
+
+  setHovering(true);
 
   let renderQuantity = quantity;
 
@@ -416,6 +419,8 @@ function handleMouseOverUnit(unit, rect) {
   const { playerId } = getExternalState();
 
   if (unit.playerId != playerId) return;
+
+  setHovering(true);
 
   const { id } = unit;
 

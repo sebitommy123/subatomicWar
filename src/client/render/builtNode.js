@@ -15,8 +15,6 @@ import { getAsset } from '../assets';
 
 export function renderBuiltNode(builtNode, superType) {
 
-  const { deletingObject } = getInternalState();
-
   let { id, x, y, type } = builtNode;
 
   let rect = renderProperty(x, y, type);

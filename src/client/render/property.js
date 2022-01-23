@@ -4,7 +4,7 @@ import { ctx, renderAtTop, RenderConstants, renderCost } from "../render";
 import { getExternalState, getInternalState, mutateInternalState } from "../state";
 import { mouseClicked, registerClick, registerNextUnhandledClickHandler } from "../userInput";
 import { getLandEfficiency, getTerritoryAt } from "../utils/game";
-import { ceilCost, costIsZero, multiplyCost } from "../utils/general";
+import { ceilCost, costIsZero, inBounds, multiplyCost } from "../utils/general";
 import { getDirections, getTerritoryDirFrom, mouseInLastCircle, mouseInRect, positionCenteredAt } from "../utils/geometry";
 import { decayingQuantity } from "../utils/math";
 
@@ -63,12 +63,13 @@ function computeYield(x, y, type) {
 export function drawBorderBuilding(asset, x, y) {
 
   const width = 10;
+  const inset = 3;
 
   const sides = {
-    right: () => ctx.drawImage(asset, x * RenderConstants.CELL_WIDTH + RenderConstants.CELL_WIDTH - width, y * RenderConstants.CELL_HEIGHT, width, RenderConstants.CELL_HEIGHT),
-    left: () => ctx.drawImage(asset, x * RenderConstants.CELL_WIDTH, y * RenderConstants.CELL_HEIGHT, width, RenderConstants.CELL_HEIGHT),
-    top: () => ctx.drawImage(asset, x * RenderConstants.CELL_WIDTH, y * RenderConstants.CELL_HEIGHT, RenderConstants.CELL_WIDTH, width),
-    bottom: () => ctx.drawImage(asset, x * RenderConstants.CELL_WIDTH, y * RenderConstants.CELL_HEIGHT + RenderConstants.CELL_HEIGHT - width, RenderConstants.CELL_WIDTH, width),
+    right: () => ctx.drawImage(asset, x * RenderConstants.CELL_WIDTH + RenderConstants.CELL_WIDTH - width - inset, y * RenderConstants.CELL_HEIGHT + inset, width, RenderConstants.CELL_HEIGHT - inset*2),
+    left: () => ctx.drawImage(asset, x * RenderConstants.CELL_WIDTH + inset, y * RenderConstants.CELL_HEIGHT + inset, width, RenderConstants.CELL_HEIGHT - inset *2),
+    top: () => ctx.drawImage(asset, x * RenderConstants.CELL_WIDTH + inset, y * RenderConstants.CELL_HEIGHT + inset, RenderConstants.CELL_WIDTH - inset*2, width),
+    bottom: () => ctx.drawImage(asset, x * RenderConstants.CELL_WIDTH + inset, y * RenderConstants.CELL_HEIGHT + RenderConstants.CELL_HEIGHT - width - inset, RenderConstants.CELL_WIDTH - inset*2, width),
   }
 
   getDirections().forEach(dir => {
@@ -108,42 +109,5 @@ export function drawBuilding(asset, x, y) {
     width: RenderConstants.CELL_WIDTH - RenderConstants.BUILDING_PADDING*2,
     height: RenderConstants.CELL_HEIGHT - RenderConstants.BUILDING_PADDING*2
   };
-
-}
-
-export function drawAuraAt(x, y) {
-
-  let pos = positionCenteredAt(x, y);
-
-  ctx.fillStyle = "#ffff88";
-
-  const totalR = RenderConstants.CELL_WIDTH * 1.5;
-
-  for (let i = 0; i < 5; i++) {
-
-    let r = totalR * (i + 1) / 5;
-
-    ctx.globalAlpha = 0.2;
-    ctx.fillCircle(pos.x, pos.y, r);
-    ctx.globalAlpha = 1;
-  }
-
-}
-
-export function drawAllCityAuras() {
-
-  const { cities } = getExternalState();
-
-  cities.forEach(city => {
-      
-    drawAuraAt(city.x, city.y);
-
-  });
-
-  cities.forEach(city => {
-    
-    drawBuilding(getAsset("city"), city.x, city.y);
-
-  });
 
 }

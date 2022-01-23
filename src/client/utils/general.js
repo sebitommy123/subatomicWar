@@ -84,9 +84,14 @@ export function inBounds(x, y, maxX, maxY) {
   return x >= 0 && x < maxX && y >= 0 && y < maxY;
 }
 
+let originalDateFunction = Date.now;
+
+export function localTime() {
+  return originalDateFunction();
+}
+
 export function ensureServerSync() {
 
-  const originalDateFunction = Date.now;
   let serverTimeError = 0;
 
   onStateChange(state => {

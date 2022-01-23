@@ -1,6 +1,8 @@
 import { getRingPositions, isAdjescent } from "../../shared/utils";
-import { getExternalState } from "../state";
-import { inBounds } from "./general";
+import { canvas, ctx } from "../render";
+import { getExternalState, getInternalState, mutateInternalState } from "../state";
+import { inBounds, localTime } from "./general";
+import { smoothCurve } from "./math";
 
 export function getUnitAtPosition(x, y) {
   const { units } = getExternalState();
@@ -46,6 +48,34 @@ export function getTerritoryAt(x, y) {
   }
   
   return territory[y][x];
+}
+
+export function getPlayerAt(x, y) {
+
+  let pid = getTerritoryAt(x, y);
+
+  if (pid == null) return null;
+
+  return getPlayerById(pid);
+
+}
+
+export function getPlayerById(id) {
+
+  const { players } = getExternalState();
+
+  return getById(id, players);
+
+}
+
+export function getPlayerColorAt(x, y) {
+
+  let p = getPlayerAt(x, y);
+
+  if (p) {
+    return p.color;
+  }
+
 }
 
 export function isFriendlyTerritory(x, y, pid) {
@@ -143,6 +173,8 @@ export function filterAllPositions(func) {
 
       if (func(x, y)) {
         result.push({x, y});
+      } else {
+        result.push({x, y, valid: false});
       }
 
     }
@@ -182,6 +214,16 @@ export function getCityAtPosition(x, y) {
   const { cities } = getExternalState();
 
   return cities.find(city => city.x == x && city.y == y);
+
+}
+
+export function getPlayerCities(pid=null) {
+
+  const { cities } = getExternalState();
+
+  if (pid == null) pid = getMe().id;
+
+  return cities.filter(city => getTerritoryAt(city.x, city.y) === pid);
 
 }
 
@@ -264,5 +306,66 @@ export function getAllFriendlyTiles(pid) {
   return filterAllPositions(function(x, y) {
     return isFriendlyTerritory(x, y, pid);
   });
+
+}
+
+export function smoothScrollTo(gameX, gameY, zoom, duration=1000) {
+
+  const targetOffsetX = (canvas.width / zoom) / 2 - gameX;
+  const targetOffsetY = (canvas.height / zoom) / 2 - gameY;
+
+  mutateInternalState(state => {
+    state.smoothScrolling = {
+      startX: ctx.offsetX,
+      startY: ctx.offsetY,
+      startZoom: ctx.zoom,
+      targetX: targetOffsetX,
+      targetY: targetOffsetY,
+      targetZoom: zoom,
+      start: localTime(),
+      end: localTime() + duration,
+    }
+  });
+
+}
+
+export function stopSmoothScroll() {
+
+  mutateInternalState(state => {
+    state.smoothScrolling = null;
+  });
+
+}
+
+export function updateSmoothScroll() {
+
+  const { smoothScrolling } = getInternalState();
+
+  if (smoothScrolling == null) return;
+
+  const { startX, startY, startZoom, targetX, targetY, targetZoom, start, end } = smoothScrolling;
+
+  let duration = end - start;
+  let delta = localTime() - start;
+
+  let progress = Math.max(0, delta / duration);
+
+  if (progress > 1) {
+    ctx.offsetX = targetX;
+    ctx.offsetY = targetY;
+    ctx.zoom = targetZoom;
+
+    stopSmoothScroll();
+
+    return;
+  }
+  
+  let currentX = smoothCurve(startX, targetX, progress);
+  let currentY = smoothCurve(startY, targetY, progress);
+  let currentZoom = smoothCurve(startZoom, targetZoom, progress);
+
+  ctx.offsetX = currentX;
+  ctx.offsetY = currentY;
+  ctx.zoom = currentZoom;
 
 }

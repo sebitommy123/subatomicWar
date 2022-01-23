@@ -5,7 +5,7 @@ import { ctx, RenderConstants, renderCost } from "../render";
 import { getExternalState, getInternalState, mutateInternalState } from "../state";
 import { forceStopDrag, mouseClicked, mouseRightClicked, registerClick, registerNextMouseUpHandler, registerScrollableSurface, tileMouseX, tileMouseY } from "../userInput";
 import { isFreeCost } from "../utils/cost";
-import { getAnythingById, getQuantityAtPosition, getUnitById } from "../utils/game";
+import { getAnythingById, getQuantityAtPosition, getUnitById, stopSmoothScroll } from "../utils/game";
 import { canBuy, inBounds, multiplyCost } from "../utils/general";
 import { mouseInRect } from "../utils/geometry";
 import { closeContextMenu } from "./contextMenu";
@@ -52,6 +52,8 @@ export function stopAllPlacing() {
     closeContextMenu();
 
     forceStopDrag();
+
+    stopSmoothScroll();
   });
 }
 
@@ -145,11 +147,14 @@ export function renderPlacingObject() {
 
   availableTiles.forEach(tile => {
 
-    if (tile.valid === false) return;
+    if (tile.valid === false) {
+      ctx.fillStyle = tile.color ? tile.color : "black";
+      ctx.globalAlpha = 0.5;
+    } else {
+      ctx.fillStyle = tile.color ? tile.color : "white";
+      ctx.globalAlpha = 0.05;
+    }
 
-    ctx.fillStyle = tile.color ? tile.color : "white";
-
-    ctx.globalAlpha = 0.5;
     ctx.fillRect(tile.x * RenderConstants.CELL_WIDTH, tile.y * RenderConstants.CELL_HEIGHT, RenderConstants.CELL_WIDTH, RenderConstants.CELL_HEIGHT);
     ctx.globalAlpha = 1;
   });

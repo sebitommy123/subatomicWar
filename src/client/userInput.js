@@ -2,6 +2,7 @@ import { canvas, ctx, RenderConstants } from "./render";
 import { stopAllPlacing } from "./render/placing";
 import { isQuantityBarOpen, setQuantityBarQuantity, shortcuts } from "./render/quantityBar";
 import { mutateInternalState } from "./state";
+import { stopSmoothScroll } from "./utils/game";
 
 export let dragging = false;
 let dragLastPosition = null;
@@ -10,6 +11,8 @@ let realDrag = false;
 let currentDragHandler = null;
 let nextMouseUp = [];
 let nextUnhandledClick = [];
+let showCursor = false;
+let hoveringCallback = null;
 
 export let mouseX = 0;
 export let mouseY = 0;
@@ -58,15 +61,25 @@ function handleKeyDown(evt) {
 
 function handleMouseDown(evt) {
 
+  stopSmoothScroll();
+
   if (evt.button == 0) {
 
-    dragging = true;
-    realDrag = false;
-    dragLastPosition = { x: evt.offsetX, y: evt.offsetY };
-    dragStart = { x: evt.offsetX, y: evt.offsetY };
-    currentDragHandler = dragHandler || (() => {});
+    if (evt.detail != 2) { 
 
-    mouseDown = true;
+      dragging = true;
+      realDrag = false;
+      dragLastPosition = { x: evt.offsetX, y: evt.offsetY };
+      dragStart = { x: evt.offsetX, y: evt.offsetY };
+      currentDragHandler = dragHandler || (() => {});
+
+      mouseDown = true;
+
+    } else {
+
+      mouseRightDown = true;
+
+    }
 
   } else if (evt.button == 2) {
 
@@ -108,6 +121,9 @@ export function forceStopDrag() {
 }
 
 function handleMouseUp() {
+
+  stopSmoothScroll();
+
   if (!realDrag && mouseDown) {
     mouseClicked = true;
   }
@@ -173,10 +189,17 @@ export function registerClick(handler) {
   clickHandler = handler;
 }
 
+export function setHovering(active=false, ifFinalCallback=null) {
+  showCursor = active;
+  hoveringCallback = ifFinalCallback;
+}
+
 export function tickStart() {
   clickHandler = null;
   dragHandler = null;
   scrollHandler = null;
+  showCursor = false;
+  hoveringCallback = null;
 
   if (mouseClicked) {
     registerClick(() => {
@@ -190,9 +213,19 @@ export function tickEnd() {
   if (clickHandler) {
     clickHandler();
   }
+
+  if (hoveringCallback) {
+    hoveringCallback();
+  }
   
   mouseClicked = false;
   mouseRightClicked = false;
+
+  if (showCursor) {
+    canvas.style.cursor = "pointer";
+  } else {
+    canvas.style.cursor = "default";
+  }
 }
 
 export function tileMouseX() {

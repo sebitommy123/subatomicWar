@@ -16,13 +16,14 @@ import { getAdjescentPositions, getAuraPositions, getRingPositions, isAdjescent,
 import { decayingQuantity, sinusoidalTimeValue } from './utils/math';
 import { displayError } from './utils/display';
 import { getHoveringTileCoords, mouseInLastCircle, mouseInRect, pointInRect, flipNeighborList, clockwiseDir, getTerritoryDirFrom, getTerritoryDirPositionFrom, getDirectionFromPosToPos, positionCenteredAt } from './utils/geometry';
-import { getMe, getUnitById, getById, canUnitMoveTo, getBuildingAtPosition, anythingAtPos, isFriendlyTerritory } from './utils/game';
+import { getMe, getUnitById, getById, canUnitMoveTo, getBuildingAtPosition, anythingAtPos, isFriendlyTerritory, updateSmoothScroll } from './utils/game';
 import { renderSoldier, renderSoldierAndQuantity, renderUnit, renderVagrantUnit } from './render/soldier';
 import { renderProperty } from './render/property';
 import { renderBuiltNode } from './render/builtNode';
 import { ensurePlacingObjectExists, isPlacingUnit, renderPlacingObject, stopAllPlacing } from './render/placing';
 import { computeQuantityBar, drawQuantityBar } from './render/quantityBar';
 import { renderContextMenu } from './render/contextMenu';
+import { renderCity } from './render/city';
 
 export const canvas = document.getElementById('canvas');
 export const ctx = new BetterCtx(canvas.getContext('2d'));
@@ -83,6 +84,8 @@ function render() {
     renderMainMenu();
 
   } else {
+    updateSmoothScroll();
+
     registerMapSurface();
 
     renderLand();
@@ -256,38 +259,11 @@ function drawBuilding(asset, x, y) {
 
 function renderCities() {
 
-  const { gridDimensions, cities } = getExternalState();
+  const { cities } = getExternalState();
 
   cities.forEach(city => {
 
-    let { x, y, population, turnsLeft, id } = city;
-
-    renderBuiltNode(city, "city");
-
-    if (!isFriendlyTerritory(x, y)) return;
-
-    let ringPositions = getRingPositions({ x, y }).filter(pos => inBounds(pos.x, pos.y, gridDimensions.width, gridDimensions.height)).filter(pos => isFriendlyTerritory(pos.x, pos.y));
-    let farms = ringPositions.filter(pos => {
-      let b = getBuildingAtPosition(pos.x, pos.y);
-      return b && b.type.name == "Farm";
-    });
-
-    let turnSpeed = 4 ** farms.length;
-
-    ctx.fontSize = 8;
-    ctx.textBaseline = "middle";
-    ctx.textAlign = "center";
-    ctx.fillStyle = "black";
-    ctx.fillCircle(x * RenderConstants.CELL_WIDTH + RenderConstants.CELL_WIDTH/2 - 24, (y+1) * RenderConstants.CELL_HEIGHT - 7, 7)
-
-    ctx.fillStyle = "white";
-    ctx.fillText(population, x * RenderConstants.CELL_WIDTH + RenderConstants.CELL_WIDTH/2 - 24, (y+1) * RenderConstants.CELL_HEIGHT - 7);
-
-    let turnsLeftEstimate = Math.ceil(turnsLeft / turnSpeed);
-    ctx.textAlign = "left";
-    ctx.fillStyle = "black";
-    ctx.fontSize = 6;
-    ctx.fillText(turnsLeftEstimate + " days until growth", x * RenderConstants.CELL_WIDTH + RenderConstants.CELL_WIDTH/2 - 15, (y+1) * RenderConstants.CELL_HEIGHT - 7)
+    renderCity(city);
 
   });
 
