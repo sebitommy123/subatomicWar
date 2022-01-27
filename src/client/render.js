@@ -16,7 +16,7 @@ import { getAdjescentPositions, getAuraPositions, getRingPositions, isAdjescent,
 import { decayingQuantity, sinusoidalTimeValue } from './utils/math';
 import { displayError } from './utils/display';
 import { getHoveringTileCoords, mouseInLastCircle, mouseInRect, pointInRect, flipNeighborList, clockwiseDir, getTerritoryDirFrom, getTerritoryDirPositionFrom, getDirectionFromPosToPos, positionCenteredAt } from './utils/geometry';
-import { getMe, getUnitById, getById, canUnitMoveTo, getBuildingAtPosition, anythingAtPos, isFriendlyTerritory, updateSmoothScroll } from './utils/game';
+import { getMe, getUnitById, getById, canUnitMoveTo, getBuildingAtPosition, anythingAtPos, isFriendlyTerritory, updateSmoothScroll, smoothScrollTo } from './utils/game';
 import { renderSoldier, renderSoldierAndQuantity, renderUnit, renderVagrantUnit } from './render/soldier';
 import { renderProperty } from './render/property';
 import { renderBuiltNode } from './render/builtNode';

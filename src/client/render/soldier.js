@@ -380,7 +380,7 @@ function moveUnitTo(x, y, quantity) {
 
 
 export function renderPlacingSoldier(x, y, quantity) {
-  
+
   let renderQuantity = quantity;
 
   if (isFriendlyTerritory(x, y)) {

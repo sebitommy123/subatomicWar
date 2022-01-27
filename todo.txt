@@ -38,7 +38,10 @@ Passive clickable surfaces don't
  - press escape to cancel to cancel
  - remove city growth days estimation upon reaching 8
  - make placing tile hovering options clearer
-
+ - fix smooth scroll zooming in other than zoom=1
+ - if someone is moving into your tile, you cant move into theirs
+ - make sure you cant stop a city razing if you have just a mine
+ 
 TODO
 
 Features:
@@ -75,9 +78,6 @@ Refactoring:
 Waiting:
  - get sprites for more tiles, items and buildings
 
-Bug fixes:
- - if someone is moving into your tile, you cant move into theirs
- - make sure you cant stop a city razing if you have just a mine
 
 
 Future updates:

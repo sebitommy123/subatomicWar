@@ -5,6 +5,8 @@ import { doesBlacklistAllow, inBounds } from "./general";
 
 export function getValidTilesMoveUnit(fromX, fromY) {
 
+  const { vagrantUnits } = getExternalState();
+
   let candidates = mapAllPositions((x, y) => {
 
     if (!canWalkOnPosition(x, y)) return {
@@ -16,6 +18,22 @@ export function getValidTilesMoveUnit(fromX, fromY) {
     };
 
     if (isAdjescent({x: fromX, y: fromY}, {x, y})) {
+
+      // these checks only need to run if going to an enemy tile, which you can only do adjescently
+
+      const beingAttacked = vagrantUnits.some(potentialEnemy => {
+        if (potentialEnemy.x == x && potentialEnemy.y == y) {
+          if (potentialEnemy.vagrantData.toX == fromX && potentialEnemy.vagrantData.toY == fromY) {
+            return true;
+          }
+        }
+      });
+
+      if (beingAttacked) {
+        return {
+          x, y, valid: false, color: "black"
+        };
+      }
 
       return {
         x, y, valid: true

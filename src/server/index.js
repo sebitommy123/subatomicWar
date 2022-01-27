@@ -5,6 +5,16 @@ const { Game, makeGamesGlobal, startGameFromLobby } = require("./Game.js");
 const { htmlentities } = require("./utils.js");
 const Server = require("./Server.js");
 
+let _MODE = "prod";
+
+if (process.argv.length > 2) {
+  const type = process.argv[2];
+  console.log(`Starting up server in development mode, type: ${type.toUpperCase()}`);
+
+  _MODE = type.toLowerCase();
+} else {
+  console.log("Starting up server normally");
+}
 
 const lobbies = makeLobbiesGlobal([]);
 const games = makeGamesGlobal([]);
@@ -15,7 +25,20 @@ temporaryInit();
 
 function temporaryInit() {
 
-  lobbies.push(new Lobby());
+  addLobby();
+
+}
+
+function addLobby() {
+
+  const newLobby = new Lobby();
+
+  if (_MODE == "multifast") {
+    newLobby.config.waitTime = 3;
+    newLobby.config.startingResources = { gold: 1000, wood: 1000, oil: 1000 };
+  }
+
+  lobbies.push(newLobby);
 
 }
 
@@ -24,20 +47,25 @@ function handleSocketConnection(socket) {
   if (process.env.NODE_ENV === "development") {
 
     if (process.argv.length > 2) {
-      const lobby = new Lobby();
 
-      socket.setState({ screen: "playMenu", name: htmlentities("input.name"), lobbyAvailable: null });
+      if (_MODE === "fast") {
 
-      lobby.addSocket(socket);
+        const lobby = new Lobby();
 
-      lobby.config.waitTime = 2;
-      lobby.config.startingResources = {gold: 10000, wood: 10000, oil: 10000};
-      lobby.config.resourcesPerDay = {gold: 0, wood: 0, oil: 0};
+        socket.setState({ screen: "playMenu", name: htmlentities("input.name"), lobbyAvailable: null });
 
-      startGameFromLobby(lobby);
+        lobby.addSocket(socket);
 
-      return;
-    }    
+        lobby.config.waitTime = 2;
+        lobby.config.startingResources = {gold: 10000, wood: 10000, oil: 10000};
+        lobby.config.resourcesPerDay = {gold: 0, wood: 0, oil: 0};
+
+        startGameFromLobby(lobby);
+
+        return;
+
+      }
+    }
 
   }
 
@@ -85,7 +113,7 @@ function handleSocketConnection(socket) {
       const lobby = getLobbyById(socket.state.lobby.id);
       if (lobby && lobby.open) {
         startGameFromLobby(lobby);
-        lobbies.push(new Lobby());
+        addLobby();
       }
     }
   });

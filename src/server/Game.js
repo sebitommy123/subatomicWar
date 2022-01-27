@@ -293,7 +293,18 @@ class Game {
     if (!builtNode.razingCollaterally) {
       builtNode.stopRaze();
     } else {
-      builtNode.getCity().stopRaze();
+      let city = builtNode.getCity();
+
+      if (city.getPlayer().id === player.id) {
+
+        builtNode.getCity().stopRaze();
+
+      } else {
+
+        player.socket.emitError(`You don't own the city of this ${builtNode.type.name}`);
+        return;
+
+      }
     }
 
     this.sendSyncUpdate();
@@ -373,6 +384,18 @@ class Game {
       let playerAtPos = this.getPlayerAtPosition(to.x, to.y);
       if (playerAtPos == null) return;
       if (playerAtPos.id !== player.id) return;
+    } else {
+      // these checks only need to run if going to an enemy tile, which you can only do adjescently
+
+      const beingAttacked = this.vagrantUnits.some(potentialEnemy => {
+        if (potentialEnemy.x == to.x && potentialEnemy.y == to.y) {
+          if (potentialEnemy.vagrantData.toX == from.x && potentialEnemy.vagrantData.toY == from.y) {
+            return true;
+          }
+        }
+      });
+
+      if (beingAttacked) return;
     }
 
     let leftOver = fromUnit.quantity - quantity;

@@ -311,8 +311,8 @@ export function getAllFriendlyTiles(pid) {
 
 export function smoothScrollTo(gameX, gameY, zoom, duration=1000) {
 
-  const targetOffsetX = (canvas.width / zoom) / 2 - gameX;
-  const targetOffsetY = (canvas.height / zoom) / 2 - gameY;
+  const targetOffsetX = canvas.width / 2 - gameX * zoom;
+  const targetOffsetY = canvas.height / 2 - gameY * zoom;
 
   mutateInternalState(state => {
     state.smoothScrolling = {

@@ -144,6 +144,8 @@ function handleMouseUp() {
 
 function handleWheel(evt) {
 
+  stopSmoothScroll();
+
   evt.preventDefault();
 
   let dy = evt.deltaY;

@@ -17,8 +17,7 @@ export function partialSetup() {
 
         let pos = positionCenteredAt(startingCity.x, startingCity.y);
 
-        console.log("now!");
-        smoothScrollTo(pos.x, pos.y, 1, 500);
+        smoothScrollTo(pos.x, pos.y, 2, 500);
       }
     }
   });
