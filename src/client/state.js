@@ -12,6 +12,7 @@ let internalState = {
   placingObject: null,
   smoothScrolling: null,
   pathfindCache: null,
+  disconnected: false,
 };
 let me;
 

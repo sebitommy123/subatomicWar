@@ -110,6 +110,7 @@ function render() {
     }
 
     renderEscapeMessage();
+    renderDisconnectedMessage();
 
     drawQuantityBar();
   }
@@ -166,6 +167,24 @@ function renderEscapeMessage() {
   ctx.abs.textBaseline = "middle";
   ctx.abs.fillStyle = "#ffffff";
   ctx.abs.fillText("Press Escape to cancel", canvas.width/2, 70);
+
+}
+
+function renderDisconnectedMessage() {
+
+  const { disconnected } = getInternalState();
+  if (!disconnected) return;
+
+  ctx.abs.font = "15px Arial";
+  let width = ctx.abs.measureText("Disconnected from server").width;
+
+  ctx.abs.fillStyle = "#540017";
+  ctx.abs.fillRect(canvas.width/2 - width/2 - 10, 150, width + 20, 40);
+
+  ctx.abs.textAlign = "center";
+  ctx.abs.textBaseline = "middle";
+  ctx.abs.fillStyle = "#ffffff";
+  ctx.abs.fillText("Disconnected from server", canvas.width/2, 170);
 
 }
 
