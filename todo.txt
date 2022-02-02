@@ -41,7 +41,8 @@ Passive clickable surfaces don't
  - fix smooth scroll zooming in other than zoom=1
  - if someone is moving into your tile, you cant move into theirs
  - make sure you cant stop a city razing if you have just a mine
- 
+ - Path finding is broken in some cases on the client, shows arrows through other people's territory and stuff that isn't your territory!
+
 TODO
 
 Features:
@@ -70,6 +71,11 @@ Features:
  - finish bots
  - naming cities (they get auto-named)
  - bigger blobs of deserts, less blobs overall
+ - When player disconnects, a bot takes over
+ - When the mouse leaves the screen, mouseDown=false, deselect everything, stop placing, as if you press "escape"
+ - Add tint to territory as you zoom out
+ - When placing a city, show the number of population used / total population, and show a glowing square border around the tiles that can be placed on 
+ - Cool animation when map first loads in, revealing every tile one by one very fast
 
 Refactoring:
  - split render up
@@ -78,7 +84,8 @@ Refactoring:
 Waiting:
  - get sprites for more tiles, items and buildings
 
-
+Bug:
+ - On mac, zoom in with pinch gesture
 
 Future updates:
  - add sound effects and music

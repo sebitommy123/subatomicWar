@@ -66,9 +66,20 @@ export function drawAuraAt(x, y) {
     let r = totalR * (i + 1) / 5;
 
     ctx.globalAlpha = 0.2;
-    ctx.fillCircle(pos.x, pos.y, r);
+    ctx.fillRect(pos.x - r, pos.y - r, r*2, r*2);
     ctx.globalAlpha = 1;
   }
+
+}
+
+export function drawCityLimits(x, y) {
+
+  let pos = positionCenteredAt(x, y);
+  const totalR = RenderConstants.CELL_WIDTH * 1.5;
+
+  ctx.strokeStyle = "#000000";
+  ctx.lineWidth = 5;
+  ctx.strokeRect(pos.x - totalR, pos.y - totalR, totalR*2, totalR*2);
 
 }
 
@@ -97,7 +108,7 @@ export function drawCitiesWithPopulationEmphasis() {
 
   cities.forEach(city => {
 
-    drawAuraAt(city.x, city.y);
+    drawCityLimits(city.x, city.y);
     
     drawBuilding(getAsset("city"), city.x, city.y);
 

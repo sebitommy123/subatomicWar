@@ -60,6 +60,21 @@ export default class BetterCtx {
     };
   }
 
+  strokeRect(x, y, width, height) {
+    if (typeof x == "object") {
+      y = x.y;
+      width = x.width;
+      height = x.height;
+      x = x.x;
+    }
+
+    this.ctx.strokeRect(this.xA(x), this.yA(y), width * this.zoom, height * this.zoom);
+
+    this.lastRect = {
+      x, y, width, height
+    };
+  }
+
   fillCircle(x, y, radius) {
     this.ctx.beginPath();
     this.ctx.arc(this.xA(x), this.yA(y), radius * this.zoom, 0, 2 * Math.PI);

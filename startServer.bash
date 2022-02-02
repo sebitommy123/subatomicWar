@@ -17,7 +17,7 @@ git config --global user.email 'sebi.szafir@hotmail.com';
 
 echo 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 | docker login ghcr.io -u sebitommy123 --password-stdin;
 
-service docker start 
+service docker start; 
 
 docker pull ghcr.io/sebitommy123/commonwealth:latest;
 

@@ -305,7 +305,7 @@ export function getAllFriendlyTiles(pid) {
 
   return filterAllPositions(function(x, y) {
     return isFriendlyTerritory(x, y, pid);
-  });
+  }).filter(v => v.valid != false);
 
 }
 

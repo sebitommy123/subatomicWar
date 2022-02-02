@@ -13,8 +13,8 @@ class Lobby {
 
     this.config = {
       gridDimensions: { // size of the playing area in tiles
-        width: 11,
-        height: 11
+        width: 15,
+        height: 15
       },
       waitTime: 15, // time for players to choose starting positions
       dayLength: 5 * 1000, // length of a day in milliseconds

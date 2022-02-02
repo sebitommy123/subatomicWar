@@ -244,19 +244,6 @@ export function renderCost(cost, x, y, transparent=false, abs=false) {
 
 }
 
-function drawBuilding(asset, x, y) {
-
-  ctx.drawImage(asset, x * RenderConstants.CELL_WIDTH + RenderConstants.BUILDING_PADDING, y * RenderConstants.CELL_HEIGHT + RenderConstants.BUILDING_PADDING, RenderConstants.CELL_WIDTH - RenderConstants.BUILDING_PADDING*2, RenderConstants.CELL_HEIGHT - RenderConstants.BUILDING_PADDING*2);
-
-  return {
-    x: x * RenderConstants.CELL_WIDTH + RenderConstants.BUILDING_PADDING,
-    y: y * RenderConstants.CELL_HEIGHT + RenderConstants.BUILDING_PADDING,
-    width: RenderConstants.CELL_WIDTH - RenderConstants.BUILDING_PADDING*2,
-    height: RenderConstants.CELL_HEIGHT - RenderConstants.BUILDING_PADDING*2
-  };
-
-}
-
 function renderCities() {
 
   const { cities } = getExternalState();
@@ -378,7 +365,7 @@ function renderTerritory() {
 
   territory.forEach((row, y) => {
     row.forEach((playerId, x) => {
-      if (playerId) {        
+      if (playerId) {
         let color = getById(playerId, players).color;
         ctx.fillStyle = color;
         
@@ -414,6 +401,12 @@ function renderTerritory() {
             }
           }
         });
+
+        const max = 0.4;
+
+        ctx.globalAlpha = 0.4 * Math.min(max / 0.4, 0.6 / ctx.zoom);
+        ctx.fillRect(x * RenderConstants.CELL_WIDTH, y * RenderConstants.CELL_HEIGHT, RenderConstants.CELL_WIDTH, RenderConstants.CELL_HEIGHT);
+        ctx.globalAlpha = 1;
 
       }
     });
