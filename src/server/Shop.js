@@ -367,6 +367,24 @@ class Shop {
       isOnBorder: true,
     });
 
+    this.addItem({
+      name: "Turret",
+      desc: "Damages all adjescent enemy units",
+      cost: { wood: 250, gold: 150 },
+      image: "turret.png",
+      type: "structure",
+      resourceYield: {},
+      food: 0,
+      combat: {},
+      blacklist: {
+        water: { allowed: false },
+        mountains: { allowed: false },
+      },
+      tags: [],
+      razeCost: {},
+      razeTime: 20 * 1000,
+    });
+
   }
 
   addItem(item) {

@@ -139,6 +139,8 @@ class Unit {
       realDamage++;
     }
 
+    if (realDamage == 0) return;
+
     this.setQuantityAnimating(Math.max(this.quantity - realDamage, 0));
     if (this.quantity <= 0) this.remove();
   }

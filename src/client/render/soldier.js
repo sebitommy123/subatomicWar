@@ -1,5 +1,5 @@
 import Constants from "../../shared/constants";
-import { isAdjescent, pathfind } from "../../shared/utils";
+import { isAdjescent, pathfind, positionEquals, positionListEquals } from "../../shared/utils";
 import { getAsset, getSpritesheet } from "../assets";
 import { emit } from "../networking";
 import { RenderConstants, ctx } from "../render";
@@ -322,9 +322,43 @@ function renderMovingUnit(x, y, quantity) {
     }
   }
 
-  if (!isAdjescent({x, y}, {x: unit.x, y: unit.y})) {
+  if (!isAdjescent({x, y}, {x: unit.x, y: unit.y}) && !positionEquals({x, y}, {x: unit.x, y: unit.y})) {
   
-    let path = pathfind({x: unit.x, y: unit.y}, {x, y}, getAllFriendlyTiles());
+    const { pathfindCache } = getInternalState();
+
+    let path;
+    let recomputePath = true;
+    const allowedTiles = getAllFriendlyTiles();
+
+    if (pathfindCache != null) {
+
+      const { prevStart, prevDest, prevAllowed, prevPath } = pathfindCache;
+
+      if (positionEquals(prevStart, {x: unit.x, y: unit.y}) && positionEquals(prevDest, {x, y}) && positionListEquals(prevAllowed, allowedTiles)) {
+        path = prevPath;
+        recomputePath = false;
+      }
+
+    }
+
+    if (recomputePath) {
+      
+      console.log("Updated path!");
+
+      path = pathfind({x: unit.x, y: unit.y}, {x, y}, allowedTiles);
+
+      mutateInternalState(state => {
+
+        state.pathfindCache = {
+          prevStart: { x: unit.x, y: unit.y },
+          prevDest: { x, y },
+          prevAllowed: allowedTiles,
+          prevPath: path,
+        }
+
+      });
+
+    }
 
     if (path != null) {
       drawPath(path);

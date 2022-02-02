@@ -172,6 +172,28 @@ function randomNumberBetween(min, max) {
   return Math.random() * (max - min) + min;
 }
 
+function positionListEquals(positionList1, positionList2) {
+
+  if (positionList1.length != positionList2.length) return false;
+
+  for (let i = 0; i < positionList1.length; i++) {
+
+    let match = positionList2.find(position => positionEquals(position, positionList1[i]));
+
+    if (match == null) return false;
+
+  }
+
+  return true;
+
+}
+
+function positionEquals(pos1, pos2) {
+
+  return pos1.x == pos2.x && pos1.y == pos2.y;
+
+}
+
 module.exports = {
   isAdjescent,
   getAdjescentPositions,
@@ -185,4 +207,6 @@ module.exports = {
   pathfind,
   randomIntBetween,
   randomNumberBetween,
+  positionListEquals,
+  positionEquals
 }

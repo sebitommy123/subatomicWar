@@ -11,6 +11,7 @@ let internalState = {
   movingObject: null,
   placingObject: null,
   smoothScrolling: null,
+  pathfindCache: null,
 };
 let me;
 
