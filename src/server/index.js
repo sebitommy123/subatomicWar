@@ -59,6 +59,11 @@ function handleSocketConnection(socket) {
         lobby.config.waitTime = 2;
         lobby.config.startingResources = {gold: 10000, wood: 10000, oil: 10000};
         lobby.config.resourcesPerDay = {gold: 0, wood: 0, oil: 0};
+        lobby.config.vagrantMoveTime = {
+          neutral: 500,
+          enemy: 500,
+          friendy: 500,
+        };
 
         startGameFromLobby(lobby);
 

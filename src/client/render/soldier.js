@@ -322,7 +322,7 @@ function renderMovingUnit(x, y, quantity) {
     }
   }
 
-  if (!isAdjescent({x, y}, {x: unit.x, y: unit.y}) && !positionEquals({x, y}, {x: unit.x, y: unit.y})) {
+  if (isFriendlyTerritory(x, y) && !isAdjescent({x, y}, {x: unit.x, y: unit.y}) && !positionEquals({x, y}, {x: unit.x, y: unit.y})) {
   
     const { pathfindCache } = getInternalState();
 
@@ -365,7 +365,7 @@ function renderMovingUnit(x, y, quantity) {
     }
 
   }
-
+ 
   return renderSoldierAndQuantity({ ...pos, c }, renderQuantity, true)
 }
 
