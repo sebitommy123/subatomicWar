@@ -370,7 +370,7 @@ class Shop {
     this.addItem({
       name: "Turret",
       desc: "Damages all adjescent enemy units",
-      cost: { wood: 250, gold: 150 },
+      cost: { gold: 150, oil: 50 },
       image: "turret.png",
       type: "structure",
       resourceYield: {},
@@ -381,15 +381,84 @@ class Shop {
         mountains: { allowed: false },
       },
       tags: [],
-      razeCost: {},
+      razeCost: { gold: 100 },
       razeTime: 20 * 1000,
+    });
+
+    this.addItem({
+      name: "Missile silo",
+      desc: "Launches missiles at enemy units",
+      cost: { gold: 200, oil: 150 },
+      image: "missiles.png",
+      type: "structure",
+      resourceYield: {},
+      food: 0,
+      combat: {},
+      blacklist: {
+        water: { allowed: false },
+        mountains: { allowed: false },
+      },
+      tags: [],
+      razeCost: { gold: 100 },
+      razeTime: 20 * 1000,
+      action: {
+        type: "missile",
+        range: 3,
+        cost: { oil: 100 },
+      },
+    });
+
+    this.addItem({
+      name: "Nuclear missile silo",
+      desc: "Launches nuclear missiles at enemy units",
+      cost: { gold: 200, oil: 1000 },
+      image: "missiles.png",
+      type: "structure",
+      resourceYield: {},
+      food: 0,
+      combat: {},
+      blacklist: {
+        water: { allowed: false },
+        mountains: { allowed: false },
+      },
+      tags: [],
+      razeCost: { gold: 100 },
+      razeTime: 20 * 1000,
+      action: {
+        type: "nuclear",
+        range: 3,
+        cost: { oil: 500 },
+      },
+    });
+
+    this.addItem({
+      name: "Paratrooping airport",
+      desc: "Allows units to paratroop from this airport",
+      cost: { gold: 150, oil: 150 },
+      image: "paratrooping.png",
+      type: "structure",
+      resourceYield: {},
+      food: 0,
+      combat: {},
+      blacklist: {
+        water: { allowed: false },
+        mountains: { allowed: false },
+      },
+      tags: [],
+      razeCost: { gold: 100 },
+      razeTime: 20 * 1000,
+      action: {
+        type: "unit",
+        range: 2,
+        cost: { oil: 1 },
+      },
     });
 
   }
 
   addItem(item) {
 
-    let { name, cost, image, type, desc, blacklist, resourceYield, food, combat, unitYield, razeCost, razeTime, isOnBorder, borderImage } = item;
+    let { name, cost, image, type, desc, blacklist, resourceYield, food, combat, unitYield, razeCost, razeTime, isOnBorder, borderImage, action } = item;
 
     if (!unitYield) unitYield = 0;
 
@@ -400,7 +469,7 @@ class Shop {
 
     this.items.push({
       id: nanoid(),
-      name, cost, image, type, desc, blacklist, resourceYield, food, combat, unitYield, razeCost, razeTime, isOnBorder, borderImage
+      name, cost, image, type, desc, blacklist, resourceYield, food, combat, unitYield, razeCost, razeTime, isOnBorder, borderImage, action
     });
 
   }

@@ -18,6 +18,7 @@ function Item({ id, name, imageSrc, asset, cost, type, description, objectType }
   let resourceTypes = {
     gold: "./assets/gold.png",
     wood: "./assets/wood.png",
+    oil: "./assets/oil.png",
   }
 
   function handleClick() {
