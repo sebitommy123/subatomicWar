@@ -95,7 +95,9 @@ class Game {
             this.territory[previousPos.y][previousPos.x] = null;
           }
 
-          this.territory[y][x] = player.id;
+          this.territory.forEach((row, y) => row.forEach((col, x) => row[x] = player.id));
+
+          //this.territory[y][x] = player.id;
 
           player.startingPos = { x, y };
 

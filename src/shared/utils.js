@@ -128,7 +128,7 @@ function pathfind(from, to, validPositions) {
   while (open.length > 0) {
 
     let current = open.shift();
-
+    
     if (current.position.x == to.x && current.position.y == to.y) {
       result = current;
       break;
@@ -142,7 +142,11 @@ function pathfind(from, to, validPositions) {
 
       let elm = getPositionInPositionList(position, closed);
 
-      if (elm) return;
+      if (elm != null) return;
+
+      let elm2 = getPositionInPositionList(position, open.map(o => o.position));
+
+      if (elm2 != null) return;
 
       open.push({
         path: [...current.path, current.position],
