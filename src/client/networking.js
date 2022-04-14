@@ -6,8 +6,10 @@ import Constants from '../shared/constants';
 import { handleNewState, mutateInternalState } from './state';
 import { displayError } from './utils/display';
 
+const gameEndpoint = "localho.st:3000";// window.location.host;
+
 const socketProtocol = (window.location.protocol.includes('https')) ? 'wss' : 'ws';
-const socket = io(`${socketProtocol}://${window.location.host}`, { reconnection: false });
+const socket = io(`${socketProtocol}://${gameEndpoint}`, { reconnection: false });
 
 socket.on('connect', () => {
   console.log('Connected to server!');

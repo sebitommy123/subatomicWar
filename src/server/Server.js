@@ -21,18 +21,25 @@ class Server {
       // Setup Webpack for development
       const compiler = webpack(webpackConfig);
       this.app.use(webpackDevMiddleware(compiler));
-    } else {
-      // Static serve the dist/ folder in production
-      this.app.use(express.static('dist'));
+      
+      console.log(`Serving client on ${this.port}`);
     }
 
     // Listen on port
     this.port = process.env.PORT || 3000;
     this.server = this.app.listen(this.port);
-    console.log(`Server listening on port ${this.port}`);
+
+    const clientOrigin = process.env.CLIENTORIGIN || "https://commonwealth.io";
+    
+    console.log(`Serving game on ${this.port} to ${clientOrigin}`);
 
     // Setup socket.io
-    this.io = socketio(this.server);
+    this.io = socketio(this.server, {
+      cors: {
+        origin: clientOrigin,
+        methods: ["GET", "POST"]
+      }
+    });
 
     // Listen for socket.io connections
     this.io.on('connection', socket => {
