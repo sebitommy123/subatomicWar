@@ -5,11 +5,13 @@
   "main": "index.js",
   "private": true,
   "scripts": {
-    "develop": "cross-env NODE_ENV=development CLIENTORIGIN=http://localho.st:3001 PORT=3000 node src/server/index.js",
-    "start": "cross-env NODE_ENV=production CLIENTORIGIN=http://localho.st:3001 node src/server/index.js",
-    "build": "webpack --config webpack.prod.js",
+    "dev:gameServer": "cross-env NODE_ENV=development CLIENTORIGIN=http://localho.st:3001 PORT=3000 node src/server/index.js",
+    "pro:gameServer": "cross-env NODE_ENV=production CLIENTORIGIN=http://localho.st:3001 node src/server/index.js",
+    "buildSite": "webpack --config webpack.prod.js",
     "deploy": "git branch -f deploy main && git push -f origin deploy",
-    "serveClient": "cross-env NODE_ENV=development PORT=3001 node src/serveClient/index.js"
+    "serveSite": "cross-env NODE_ENV=development PORT=3001 node src/serveClient/index.js",
+    "dev:mainServer": "cross-env NODE_ENV=production CLIENTORIGIN=http://localho.st:3001 PORT=3005 node src/server/index.js",
+    "pro:mainServer": "cross-env NODE_ENV=development CLIENTORIGIN=http://localho.st:3001 PORT=3005 node src/server/index.js"
   },
   "repository": {
     "type": "git",
@@ -22,6 +24,7 @@
   },
   "homepage": "https://github.com/sebitommy123/subatomicWar#readme",
   "dependencies": {
+    "aws-sdk": "^2.1142.0",
     "express": "^4.17.2",
     "html-webpack-plugin": "^5.5.0",
     "joi": "^17.5.0",
@@ -30,9 +33,11 @@
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
     "sanitize-html": "^2.6.1",
+    "sha3": "^2.1.4",
     "socket.io": "^4.4.0",
     "socket.io-client": "^4.4.0",
     "throttle-debounce": "^3.0.1",
+    "uuid": "^8.3.2",
     "webpack": "^5.65.0",
     "webpack-dev-middleware": "^5.3.0"
   },
@@ -45,6 +50,7 @@
     "cross-env": "^7.0.3",
     "css-loader": "^6.5.1",
     "css-minimizer-webpack-plugin": "^3.3.1",
+    "dynamodb-local": "^0.0.31",
     "eslint": "^8.5.0",
     "eslint-config-airbnb-base": "^15.0.0",
     "eslint-plugin-import": "^2.25.3",
