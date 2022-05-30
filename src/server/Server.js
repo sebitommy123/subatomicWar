@@ -5,8 +5,6 @@ const socketio = require('socket.io');
 
 const { wrapSocket } = require('./SocketWrapper');
 
-const webpackConfig = require('../../webpack.dev.js');
-
 const Constants = require("../shared/constants.js");
 
 class Server {
@@ -15,9 +13,11 @@ class Server {
 
     // Setup an Express server
     this.app = express();
-    this.app.use(express.static('public'));
-
+    
     if (process.env.NODE_ENV === 'development') {
+      this.app.use(express.static('public'));
+      
+      const webpackConfig = require('../../webpack.dev.js');
       // Setup Webpack for development
       const compiler = webpack(webpackConfig);
       this.app.use(webpackDevMiddleware(compiler));

@@ -4,6 +4,7 @@ const { Lobby, makeLobbiesGlobal, getLobbyById } = require("./Lobby.js");
 const { Game, makeGamesGlobal, startGameFromLobby } = require("./Game.js");
 const { htmlentities } = require("./utils.js");
 const Server = require("./Server.js");
+const InternalServer = require("./InternalServer.js");
 
 let _MODE = "prod";
 
@@ -20,6 +21,10 @@ const lobbies = makeLobbiesGlobal([]);
 const games = makeGamesGlobal([]);
 
 const server = new Server(handleSocketConnection);
+
+const internalServer = new InternalServer(() => {
+  console.log("Received request to start game from main server");
+});
 
 temporaryInit();
 
