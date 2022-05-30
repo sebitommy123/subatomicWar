@@ -5,13 +5,20 @@
   "main": "index.js",
   "private": true,
   "scripts": {
-    "dev:gameServer": "cross-env NODE_ENV=development CLIENTORIGIN=http://localho.st:3001 PORT=3000 node src/server/index.js",
-    "pro:gameServer": "cross-env NODE_ENV=production CLIENTORIGIN=http://localho.st:3001 node src/server/index.js",
     "buildSite": "webpack --config webpack.prod.js",
     "deploy": "git branch -f deploy main && git push -f origin deploy",
     "serveSite": "cross-env NODE_ENV=development PORT=3001 node src/serveClient/index.js",
-    "dev:mainServer": "cross-env NODE_ENV=production CLIENTORIGIN=http://localho.st:3001 PORT=3005 node src/server/index.js",
-    "pro:mainServer": "cross-env NODE_ENV=development CLIENTORIGIN=http://localho.st:3001 PORT=3005 node src/server/index.js"
+
+    "dev:gameServer": "cross-env NODE_ENV=development CLIENTORIGIN=http://localho.st:3001 PORT=3000 INTERNAL_PORT=3042 node src/server/index.js",
+    "dev:mainServer": "cross-env NODE_ENV=development CLIENTORIGIN=http://localho.st:3001 PORT=3005 node src/server/index.js",
+    
+    "pro:mainServer": "cross-env NODE_ENV=production node src/server/index.js",
+    "pro:gameServer": "cross-env NODE_ENV=production node src/server/index.js",
+
+    "dev:gameServer:buildImage": "docker build . -t commonwealth_game_server -f GameServer.Dockerfile",
+    "dev:mainServer:buildImage": "docker build . -t commonwealth_main_server -f MainServer.Dockerfile",
+
+    "dev:gameServer:runImage": "docker run -p 3000:3000 commonwealth_game_server"
   },
   "repository": {
     "type": "git",
