@@ -14,7 +14,7 @@ class Server {
     // Setup an Express server
     this.app = express();
     
-    if (process.env.NODE_ENV === 'development') {
+    if (process.env.NODE_ENV === 'development' && false) {
       this.app.use(express.static('public'));
       
       const webpackConfig = require('../../webpack.dev.js');

@@ -1,0 +1,345 @@
+{
+  "ModelName": "GameV2",
+  "ModelMetadata": {
+    "Author": "",
+    "DateCreated": "May 21, 2022, 09:09 PM",
+    "DateLastModified": "Jun 04, 2022, 10:23 PM",
+    "Description": "",
+    "AWSService": "Amazon DynamoDB",
+    "Version": "3.0"
+  },
+  "DataModel": [
+    {
+      "TableName": "Game",
+      "KeyAttributes": {
+        "PartitionKey": {
+          "AttributeName": "PK",
+          "AttributeType": "S"
+        },
+        "SortKey": {
+          "AttributeName": "SK",
+          "AttributeType": "S"
+        }
+      },
+      "NonKeyAttributes": [
+        {
+          "AttributeName": "GSI1PK",
+          "AttributeType": "S"
+        },
+        {
+          "AttributeName": "password",
+          "AttributeType": "S"
+        },
+        {
+          "AttributeName": "playerData",
+          "AttributeType": "M"
+        },
+        {
+          "AttributeName": "games",
+          "AttributeType": "N"
+        },
+        {
+          "AttributeName": "stage",
+          "AttributeType": "S"
+        },
+        {
+          "AttributeName": "name",
+          "AttributeType": "S"
+        },
+        {
+          "AttributeName": "playerCount",
+          "AttributeType": "N"
+        },
+        {
+          "AttributeName": "leader",
+          "AttributeType": "BOOL"
+        },
+        {
+          "AttributeName": "session",
+          "AttributeType": "S"
+        },
+        {
+          "AttributeName": "temporaryUser",
+          "AttributeType": "BOOL"
+        },
+        {
+          "AttributeName": "ttl",
+          "AttributeType": "N"
+        },
+        {
+          "AttributeName": "internalAddress",
+          "AttributeType": "S"
+        }
+      ],
+      "GlobalSecondaryIndexes": [
+        {
+          "IndexName": "Games",
+          "KeyAttributes": {
+            "PartitionKey": {
+              "AttributeName": "GSI1PK",
+              "AttributeType": "S"
+            },
+            "SortKey": {
+              "AttributeName": "PK",
+              "AttributeType": "S"
+            }
+          },
+          "Projection": {
+            "ProjectionType": "ALL"
+          }
+        },
+        {
+          "IndexName": "Servers",
+          "KeyAttributes": {
+            "PartitionKey": {
+              "AttributeName": "SK",
+              "AttributeType": "S"
+            },
+            "SortKey": {
+              "AttributeName": "games",
+              "AttributeType": "N"
+            }
+          },
+          "Projection": {
+            "ProjectionType": "ALL"
+          }
+        },
+        {
+          "IndexName": "SessionsGSI",
+          "KeyAttributes": {
+            "PartitionKey": {
+              "AttributeName": "session",
+              "AttributeType": "S"
+            }
+          },
+          "Projection": {
+            "ProjectionType": "ALL"
+          }
+        }
+      ],
+      "TableData": [
+        {
+          "PK": {
+            "S": "User-sebitommy123"
+          },
+          "SK": {
+            "S": "Metadata"
+          },
+          "GSI1PK": {
+            "S": "Game-35822"
+          },
+          "password": {
+            "S": "sebi123"
+          },
+          "playerData": {
+            "M": {
+              "nickname": {
+                "S": "Sebi"
+              },
+              "gold": {
+                "N": "42"
+              }
+            }
+          },
+          "leader": {
+            "BOOL": true
+          },
+          "session": {
+            "S": "1"
+          },
+          "temporaryUser": {
+            "BOOL": false
+          }
+        },
+        {
+          "PK": {
+            "S": "User-nishtha42"
+          },
+          "SK": {
+            "S": "Metadata"
+          },
+          "GSI1PK": {
+            "S": "Game-35822"
+          },
+          "password": {
+            "S": "securePassword"
+          },
+          "playerData": {
+            "M": {
+              "nickname": {
+                "S": "Me"
+              },
+              "gold": {
+                "N": "42"
+              }
+            }
+          },
+          "session": {
+            "S": "2"
+          },
+          "temporaryUser": {
+            "BOOL": false
+          }
+        },
+        {
+          "PK": {
+            "S": "User-Ganesh"
+          },
+          "SK": {
+            "S": "Metadata"
+          },
+          "GSI1PK": {
+            "S": "Game-35823"
+          },
+          "password": {
+            "S": "pass"
+          },
+          "playerData": {
+            "M": {
+              "nickname": {
+                "S": "Me"
+              },
+              "gold": {
+                "N": "42"
+              }
+            }
+          },
+          "leader": {
+            "BOOL": true
+          },
+          "session": {
+            "S": "3"
+          },
+          "temporaryUser": {
+            "BOOL": false
+          }
+        },
+        {
+          "PK": {
+            "S": "Server-localho.st:3000"
+          },
+          "SK": {
+            "S": "Metadata"
+          },
+          "games": {
+            "N": "2"
+          },
+          "internalAddress": {
+            "S": "localho.st:3042"
+          }
+        },
+        {
+          "PK": {
+            "S": "Server-localho.st:3000"
+          },
+          "SK": {
+            "S": "Game-35822"
+          },
+          "GSI1PK": {
+            "S": "Game-35822"
+          },
+          "stage": {
+            "S": "lobby"
+          },
+          "name": {
+            "S": "Sebi's game"
+          },
+          "playerCount": {
+            "N": "2"
+          },
+          "internalAddress": {
+            "S": "localho.st:3042"
+          }
+        },
+        {
+          "PK": {
+            "S": "Server-localho.st:3000"
+          },
+          "SK": {
+            "S": "Game-35823"
+          },
+          "GSI1PK": {
+            "S": "Game-35823"
+          },
+          "stage": {
+            "S": "started"
+          },
+          "name": {
+            "S": "Nishtha's game"
+          },
+          "playerCount": {
+            "N": "1"
+          },
+          "internalAddress": {
+            "S": "localho.st:3042"
+          }
+        },
+        {
+          "PK": {
+            "S": "Server-205.251.231.54:7010"
+          },
+          "SK": {
+            "S": "Metadata"
+          },
+          "games": {
+            "N": "0"
+          },
+          "internalAddress": {
+            "S": "205.251.231.54:7011"
+          }
+        },
+        {
+          "PK": {
+            "S": "User-person500"
+          },
+          "SK": {
+            "S": "Metadata"
+          },
+          "password": {
+            "S": "password"
+          },
+          "playerData": {
+            "M": {
+              "nickname": {
+                "S": "Me"
+              },
+              "gold": {
+                "N": "42"
+              }
+            }
+          }
+        }
+      ],
+      "DataAccess": {
+        "MySql": {}
+      },
+      "BillingMode": "PROVISIONED",
+      "ProvisionedCapacitySettings": {
+        "ProvisionedThroughput": {
+          "ReadCapacityUnits": 5,
+          "WriteCapacityUnits": 5
+        },
+        "AutoScalingRead": {
+          "ScalableTargetRequest": {
+            "MinCapacity": 1,
+            "MaxCapacity": 10,
+            "ServiceRole": "AWSServiceRoleForApplicationAutoScaling_DynamoDBTable"
+          },
+          "ScalingPolicyConfiguration": {
+            "TargetValue": 70
+          }
+        },
+        "AutoScalingWrite": {
+          "ScalableTargetRequest": {
+            "MinCapacity": 1,
+            "MaxCapacity": 10,
+            "ServiceRole": "AWSServiceRoleForApplicationAutoScaling_DynamoDBTable"
+          },
+          "ScalingPolicyConfiguration": {
+            "TargetValue": 70
+          }
+        }
+      }
+    }
+  ]
+}

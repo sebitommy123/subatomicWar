@@ -1,0 +1,17 @@
+version: '3.9'
+services:
+  gameServer:
+    build: .
+    dockerfile: GameServer.Dockerfile
+  mainServer:
+    build: .
+    dockerfile: MainServer.Dockerfile
+  serveSite:
+    build: .
+    image: node:12-alpine
+    command: node src/serveClient/index.js
+    ports:
+      - 80:80
+    
+
+    

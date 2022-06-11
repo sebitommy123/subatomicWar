@@ -7,18 +7,19 @@
   "scripts": {
     "buildSite": "webpack --config webpack.prod.js",
     "deploy": "git branch -f deploy main && git push -f origin deploy",
-    "serveSite": "cross-env NODE_ENV=development PORT=3001 node src/serveClient/index.js",
-
-    "dev:gameServer": "cross-env NODE_ENV=development CLIENTORIGIN=http://localho.st:3001 PORT=3000 INTERNAL_PORT=3042 node src/server/index.js",
-    "dev:mainServer": "cross-env NODE_ENV=development CLIENTORIGIN=http://localho.st:3001 PORT=3005 node src/server/index.js",
-    
-    "pro:mainServer": "cross-env NODE_ENV=production node src/server/index.js",
-    "pro:gameServer": "cross-env NODE_ENV=production node src/server/index.js",
-
+    "serveSite": "cross-env NODE_ENV=development PORT=8000 node src/serveClient/index.js",
+    "dev:gameServer": "cross-env CLIENTORIGIN=http://localho.st:8000 PORT=3000 INTERNAL_PORT=3042 MAIN_SERVER_ADDRESS=localho.st:3011 node src/server/index.js develop",
+    "dev:mainServer": "cross-env NODE_ENV=development CLIENTORIGIN=http://localho.st:8000 PORT=3010 INTERNAL_PORT=3011 node src/mainServer/index.js",
+    "dev:globalServer": "cross-env NODE_ENV=development DEV_MAIN_ADDR=http://localho.st:3010 CLIENTORIGIN=http://localho.st:8000 PORT=3002 node src/globalServer/index.js",
+    "pro:mainServer": "cross-env NODE_ENV=production node src/mainServer/index.js",
+    "pro:gameServer": "cross-env node src/server/index.js",
+    "pro:globalServer": "cross-env NODE_ENV=production CLIENTORIGIN=http://localho.st:8000 PORT=3002 node src/globalServer/index.js",
     "dev:gameServer:buildImage": "docker build . -t commonwealth_game_server -f GameServer.Dockerfile",
     "dev:mainServer:buildImage": "docker build . -t commonwealth_main_server -f MainServer.Dockerfile",
-
-    "dev:gameServer:runImage": "docker run -p 3000:3000 commonwealth_game_server"
+    "dev:gameServer:runImage": "docker run -p 3000:3000 -p 3042:3042 commonwealth_game_server",
+    "dev:dynamodb": "java -D\"java.library.path=./dynamodbLocal/DynamoDBLocal_lib\" -jar dynamodbLocal/DynamoDBLocal.jar -port 8042",
+    "dev:dynamodb:wipe": "aws dynamodb delete-table --table-name Game --endpoint http://localhost:8042 --region localhost",
+    "dev": "echo [warning] If dynamodb does not initialize quickly enough, gameServer and mainServer fail to start. && concurrently -n dynamodb,gameServer,mainServer,globalServer,serveSite \"npm run dev:dynamodb\" \"npm run dev:gameServer\" \"npm run dev:mainServer\" \"npm run dev:globalServer\" \"npm run serveSite\""
   },
   "repository": {
     "type": "git",
@@ -32,6 +33,9 @@
   "homepage": "https://github.com/sebitommy123/subatomicWar#readme",
   "dependencies": {
     "aws-sdk": "^2.1142.0",
+    "axios": "^0.27.2",
+    "concurrently": "^7.2.1",
+    "cors": "^2.8.5",
     "express": "^4.17.2",
     "html-webpack-plugin": "^5.5.0",
     "joi": "^17.5.0",

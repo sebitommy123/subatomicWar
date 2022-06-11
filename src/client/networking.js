@@ -3,31 +3,45 @@
 import io from 'socket.io-client';
 import { throttle } from 'throttle-debounce';
 import Constants from '../shared/constants';
-import { handleNewState, mutateInternalState } from './state';
+import { handleNewState, mutateInternalState, getInternalState } from './state';
 import { displayError } from './utils/display';
 
-const gameEndpoint = "localho.st:3000";// window.location.host;
-
 const socketProtocol = (window.location.protocol.includes('https')) ? 'wss' : 'ws';
-const socket = io(`${socketProtocol}://${gameEndpoint}`, { reconnection: false });
 
-socket.on('connect', () => {
-  console.log('Connected to server!');
+let socket;
 
-  socket.on(Constants.messages.updateState, handleNewState);
+export function connectToGameServer(callback) {
 
-  socket.on(Constants.messages.error, e => displayError(e.error));
-  
-  socket.on('disconnect', () => {
-    console.log('Disconnected from server.');
+  const { gameServerAddress } = getInternalState();
 
-    mutateInternalState(state => {
-      state.disconnected = true;
-    })
+  socket = io(`${socketProtocol}://${gameServerAddress}`, { reconnection: false });
+
+  socket.on('connect', () => {
+    console.log('Connected to server!');
+
+    socket.on(Constants.messages.updateState, handleNewState);
+
+    socket.on(Constants.messages.error, e => displayError(e.error));
+    
+    socket.on('disconnect', () => {
+      console.log('Disconnected from server.');
+
+      mutateInternalState(state => {
+        state.disconnected = true;
+      });
+    });
+
+    callback();
   });
-});
+
+}
 
 export function emit(event, args, callback) {
+
+  if (socket == null) {
+    console.warn("Emit called before game server connection");
+    return;
+  }
 
   args = args || {};
   callback = callback || (() => {});

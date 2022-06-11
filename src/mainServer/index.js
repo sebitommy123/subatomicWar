@@ -1,10 +1,20 @@
 var express = require('express');
 var app = express();
+var appInternal = express(); // not used
 const { v4: uuid } = require('uuid');
+const axios = require("axios").default;
+var cors = require("cors");
 
 let mode = (process.env.NODE_ENV === "development") ? "development" : "production";
 
-let config;
+let config = {
+  port: process.env.PORT,
+  portInternal: process.env.INTERNAL_PORT,
+  clientOrigin: process.env.CLIENTORIGIN,
+  anonTTL: 60 * 60 * 24, // expire anon users after a day
+  maxGamesPerServer: 10,
+  healthyGamesPerServer: 5,
+};
 
 if (mode == "production") {
 
@@ -19,24 +29,19 @@ if (mode == "production") {
     process.exit(1);
   }
 
-  config = {
+  config = {...config,
     ip: process.env.MY_IP || "unknown",
-    port: process.env.PORT,
     region: process.env.AWS_REGION,
     ddbEndpoint: process.env.DDB_ENDPOINT,
     ddbRegion: process.env.AWS_REGION,
     ddbTableName: process.env.DDB_TABLE_NAME || "Game",
     ddbCredentials: {accessKeyId: process.env.AWS_ACCESS_KEY_ID, secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY},
-    anonTTL: 60 * 60 * 24, // expire anon users after a day
-    maxGamesPerServer: 10,
-    healthyGamesPerServer: 5,
   };
 
 } else if (mode == "development") {
 
   config = {...config,
     ip: 'localhost',
-    port: 3000,
     region: "North America",
     ddbEndpoint: "http://localhost:8042",
     ddbRegion: 'localhost',
@@ -45,6 +50,12 @@ if (mode == "production") {
   }
 
 }
+
+app.use(cors({
+  origin: config.clientOrigin,
+}));
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
 
 var AWS = require('aws-sdk');
 AWS.config.update({endpoint: config.ddbEndpoint, region: config.ddbRegion, credentials: config.ddbCredentials});
@@ -75,7 +86,7 @@ app.get('/listGames', async (req, res) => {
 app.post('/loginAnon', async (req, res) => {
   // connect to DynamoDB, check username + "anon" + numbers to make it unique, make a session token, and return it
 
-  let { name } = req.query;
+  let { name } = req.body;
 
   if (name == null) return respondWithError(res, "No name provided");
 
@@ -120,7 +131,7 @@ app.post('/register', (req, res) => {
 app.post('/createGame', async (req, res) => {
   // connect to DynamoDB, add the game, add the player to it as a leader, tell the appropriate server to start up the game, and return the IP of the server
 
-  let { name, session } = req.query;
+  let { name, session } = req.body;
 
   if (name == null || session == null) return respondWithError(res, "No name or session token provided");
 
@@ -134,13 +145,17 @@ app.post('/createGame', async (req, res) => {
   if (name.length < 3) return respondWithError(res, "Name must be at least 3 characters");
 
   // GET USERNAME BY SESSION
-  let username = await getUsernameBySession(session);
-  if (username == null) return respondWithError(res, "You have been logged out. Please refresh and log back in to continue.");
+  let userData = await getUsernameBySession(session);
+  if (userData == null) return respondWithError(res, "You have been logged out. Please refresh and log back in to continue.");
   
-  // GET NEXT SERVER TO LOAD
-  let nextServerAddr = await getNextServerToLoad();
-  if (nextServerAddr == null) return respondWithError(res, "No available servers to provision game. Try again later.");
+  const { username, gameId: previousGameId } = userData;
 
+  // GET NEXT SERVER TO LOAD
+  let nextServer = await getNextServerToLoad();
+  if (nextServer == null) return respondWithError(res, "No available servers to provision game. Try again later.");
+
+  const { serverAddress: nextServerAddr, internalAddress } = nextServer;
+ 
   // TODO all of these should be a transaction. If there are failures halfway, the database will be left in an inconsistent state.
 
   const gameId = uuid();
@@ -148,36 +163,60 @@ app.post('/createGame', async (req, res) => {
   // PUT PLAYER IN GAME
   if (await setPlayerInGame(username, gameId) == null) return respondWithError(res, "Internal server error");
 
+  if (previousGameId != null) {
+    const gameData = await getGameById(previousGameId);
+    if (gameData != null) {
+      await decrementPlayerCount(gameData.serverAddress, previousGameId);
+    }    
+  }
+
   // ADD GAME TO SERVER
-  if (await addGameToServer(gameId, nextServerAddr, name) == null) return respondWithError(res, "Failed to add game. Please try again later.");
+  if (!await addGameToServer(gameId, nextServerAddr, internalAddress, name)) return respondWithError(res, "Failed to add game. Please try again later.");
 
   res.send({
-    success: true, // false if no available server to provision game
-    serverIP: nextServerAddr
+    success: true,
+    serverAddress: nextServerAddr
   });
 });
 
 app.post('/joinGame', async (req, res) => {
   // connect to DynamoDB, add the player to it in the database, and return the IP of the server
 
-  let { session, gameId } = req.query;
+  let { session, gameId } = req.body;
 
   if (session == null || gameId == null) return respondWithError(res, "No session or game ID provided");
 
   session = session.toString();
   gameId = gameId.toString();
 
-  let username = await getUsernameBySession(session);
-  if (username == null) return respondWithError(res, "You have been logged out. Please refresh and log back in to continue.");
+  let userData = await getUsernameBySession(session);
+  if (userData == null) return respondWithError(res, "You have been logged out. Please refresh and log back in to continue.");
+
+  const { username, gameId: currentGameId } = userData;
 
   const game = await getGameById(gameId);
   if (game == null) return respondWithError(res, "Game not found");
 
   const { serverAddress, stage } = game;
 
+  if (gameId == currentGameId) {
+    res.send({
+      success: true,
+      serverAddress
+    });
+    return;
+  };
+
   if (stage != "lobby") return respondWithError(res, "Game is already in progress");
 
   if (await setPlayerInGame(username, gameId, false) == null) return respondWithError(res, "Internal server error");
+
+  if (currentGameId != null) {
+    const gameData = await getGameById(currentGameId);
+    if (gameData != null) {
+      await decrementPlayerCount(gameData.serverAddress, currentGameId);
+    }    
+  }
 
   if (await incrementPlayerCount(serverAddress, gameId) == null) return respondWithError(res, "Internal server error");
 
@@ -206,9 +245,10 @@ async function getAllGames() {
     ProjectionExpression: "GSI1PK, playerCount, #n",
     TableName: config.ddbTableName,
     IndexName: "Games",
-    FilterExpression: "begins_with(SK, :gamePrefix)",
+    FilterExpression: "begins_with(SK, :gamePrefix) and stage = :lobby",
     ExpressionAttributeValues: {
-      ":gamePrefix": { S: "Game-" }
+      ":gamePrefix": { S: "Game-" },
+      ":lobby": { S: "lobby" }
     },
     ExpressionAttributeNames: {
       "#n": "name"
@@ -250,7 +290,7 @@ function mintNewUser(name, sessionToken, ttlTimestamp) {
 
 async function getNextServerToLoad() {
   const data = await p(ddb.scan, {
-    ProjectionExpression: "PK, games",
+    ProjectionExpression: "PK, games, internalAddress",
     TableName: config.ddbTableName,
     IndexName: "Servers"
   });
@@ -261,7 +301,8 @@ async function getNextServerToLoad() {
   let servers = Items.map(item => {
     return {
       serverAddress: item.PK.S.substring(7),
-      games: parseInt(item.games.N)
+      games: parseInt(item.games.N),
+      internalAddress: item.internalAddress.S
     }
   });
 
@@ -269,16 +310,16 @@ async function getNextServerToLoad() {
   let unhealthyServers = servers.filter(server => server.games > config.healthyGamesPerServer);
 
   if (healthyServers.length > 0) {
-    return healthyServers[healthyServers.length - 1].serverAddress;
+    return healthyServers[healthyServers.length - 1];
   } else if (unhealthyServers.length > 0 && unhealthyServers[0].games < config.maxGamesPerServer) {
-    return unhealthyServers[0].serverAddress;
+    return unhealthyServers[0];
   } else {
     return null;
   }
 
 }
 
-function addGame(gameId, serverAddr, gameName) {
+function addGame(gameId, serverAddr, serverInternalAddr, gameName) {
   return p(ddb.putItem, {
     TableName: config.ddbTableName,
     Item: {
@@ -289,6 +330,7 @@ function addGame(gameId, serverAddr, gameName) {
       "stage": {"S": "lobby"},
       "playerCount": {"N": "1"},
       "timestamp": {"N": Date.now().toString()},
+      "internalAddress": {"S": serverInternalAddr}
     },
   });
 }
@@ -307,10 +349,20 @@ function incrementServerGameCount(serverAddr) {
   });
 }
 
-async function addGameToServer(gameId, serverAddr, gameName) {
-  // TODO: Actually tell server to add game
+async function addGameToServer(gameId, serverAddr, serverInternalAddr, gameName) {
 
-  if (await addGame(gameId, serverAddr, gameName) == null) {
+  console.log(`Telling game server at address ${serverAddr} through ${serverInternalAddr} to add game ${gameId}`);
+
+  try {
+    await axios.post(`http://${serverInternalAddr}/startGame`, {
+      gameId,
+    }, {timeout: 2000});
+  } catch (e) {
+    console.error(`ERROR Failed to contact server at address ${serverAddr} through ${serverInternalAddr} to add game ${gameId}`);
+    return false;
+  }
+
+  if (await addGame(gameId, serverAddr, serverInternalAddr, gameName) == null) {
     return false;
   }
 
@@ -337,7 +389,10 @@ async function getUsernameBySession(session) {
   if (Items.length === 0) {
     return null;
   } else {
-    return Items[0].PK.S.substring(5);
+    return {
+      username: Items[0].PK.S.substring(5),
+      gameId: Items[0].GSI1PK ? Items[0].GSI1PK.S.substring(5) : null
+    };
   }
 
 }
@@ -395,6 +450,20 @@ function incrementPlayerCount(serverAddress, gameId) {
   });
 }
 
+function decrementPlayerCount(serverAddress, gameId) {
+  return p(ddb.updateItem, {
+    TableName: config.ddbTableName,
+    Key: {
+      "PK": {"S": `Server-${serverAddress}`},
+      "SK": {"S": `Game-${gameId}`},
+    },
+    UpdateExpression: "ADD playerCount :inc",
+    ExpressionAttributeValues: {
+      ":inc": {"N": "-1"}
+    },
+  });
+}
+
 function respondWithError(resObject, err) {
   resObject.send({
     success: false,
@@ -405,4 +474,8 @@ function respondWithError(resObject, err) {
 
 app.listen(config.port, () => {
   console.log(`Listening on port ${config.port}`);
+});
+
+appInternal.listen(config.portInternal, () => {
+  console.log(`Listening internally on port ${config.portInternal}`);
 });

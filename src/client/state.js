@@ -13,6 +13,10 @@ let internalState = {
   smoothScrolling: null,
   pathfindCache: null,
   disconnected: false,
+  gamesAvailable: null,
+  name: null,
+  chosenRegion: null,
+  sessionToken: null,
 };
 let me;
 

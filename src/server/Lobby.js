@@ -5,7 +5,13 @@ let lobbies;
 
 class Lobby {
 
-  constructor() {
+  constructor(id) {
+
+    console.log(`Creating lobby for game ${id}`);
+
+    this.GID = id;
+
+    console.log("Lobby GID=", id);
 
     this.id = nanoid();
     this.sockets = [];
@@ -49,9 +55,9 @@ class Lobby {
 
   }
 
-  addSocket(socket) {
+  addSocket(socket, name) {
 
-    socket.setState(state => ({ screen: "lobbyMenu", name: state.name, lobby: this.toClient() }));
+    socket.setState(state => ({ screen: "lobbyMenu", name, lobby: this.toClient() }));
     socket.emitState();
     
     this.sockets.push(socket);
@@ -115,8 +121,13 @@ function getLobbyById(id) {
   return lobbies.find(lobby => lobby.id === id);
 }
 
+function getLobbyByGID(GID) {
+  return lobbies.find(lobby => lobby.GID === GID);
+}
+
 module.exports = {
   Lobby,
   makeLobbiesGlobal,
-  getLobbyById
+  getLobbyById,
+  getLobbyByGID
 }

@@ -27,6 +27,8 @@
         <div class="nameInputText">Name your CommonWealth:</div>
         <input type="text" id="nameInput"  placeholder="The Empire" />
       </div>
+      <div class="regionInput" id="regionInput">
+      </div>
       <div class="startButton">
         <button id="startButton">Play!</button>
       </div>
@@ -37,8 +39,14 @@
       <div class="title">
         CommonWealth.io
       </div>
+      <button style="float: right" class="greenBtn" id="gameRefreshButton">Refresh</button>
+      <h3>Games</h3>
+      <div class="availableGames" id="availableGames">
+      </div>
+      <h3>Make a new game</h3>
+      <input placeholder="Name" id="createGameName"/>
       <div class="startButton">
-        <button id="joinLobby">Start game</button>
+        <button id="createGameButton" disabled="disabled">Create game</button>
       </div>
     </div>
   </div>
