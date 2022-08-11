@@ -12,15 +12,16 @@ const { colors, pickRandom, filter2dArray } = require("./utils");
 const { isAdjescent, isIsolatedPosition, pathfind } = require("../shared/utils");
 const { Shop } = require("./Shop");
 const BotSocket = require("./BotSocket");
+const { setGameStage } = require("./ddb");
 
 class Game {
 
-  constructor(playerSockets, lobbyId, config) {
+  constructor(playerSockets, globalGameId, config) {
 
     this.stage = "pregame";
 
     this.config = config;
-    this.lobbyId = lobbyId;
+    this.globalGameId = globalGameId;
 
     this.gridDimensions = config.gridDimensions;
 
@@ -763,6 +764,9 @@ function startGameFromLobby(lobby) {
     lobby.config);
 
   games.push(game);
+
+  // Update stage on database so it no longer shows up in the main menu
+  setGameStage("started");
 
   lobby.removeLobby();
 

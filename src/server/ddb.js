@@ -89,6 +89,46 @@ async function getUserBySession(session) {
 
 }
 
+async function getGameById(gameId) {
+  const data = await p(ddb.query, {
+    TableName: config.tableName,
+    KeyConditionExpression: "GSI1PK = :game and begins_with(PK, :serverText)",
+    ExpressionAttributeValues: {
+      ":game": {"S": `Game-${gameId}`},
+      ":serverText": {"S": "Server-"}
+    },
+    IndexName: "Games"
+  });
+
+  if (data == null) return null;
+
+  const { Items } = data;
+  if (Items.length === 0) {
+    return null;
+  } else {
+    return {
+      serverAddress: Items[0].PK.S.substring(7),
+      stage: Items[0].stage.S
+    };
+  }
+}
+
+async function setGameStage(gameId, stage) {
+  const { serverAddress } = await getGameById(gameId); //We get our own server address... We have this! TODO
+
+  await p(ddb.updateItem, {
+    TableName: config.ddbTableName,
+    Key: {
+      "PK": {"S": `Server-${serverAddress}`},
+      "SK": {"S": `Game-${gameId}`},
+    },
+    UpdateExpression: "SET stage = :stage",
+    ExpressionAttributeValues: {
+      ":stage": {"S": stage}
+    },
+  });
+}
+
 function p(func, config) {
   return new Promise((resolve, reject) => {
     func.bind(ddb)(config, (err, data) => {
@@ -104,5 +144,6 @@ function p(func, config) {
 
 module.exports = {
   registerServer,
-  getUserBySession
+  getUserBySession,
+  setGameStage
 };

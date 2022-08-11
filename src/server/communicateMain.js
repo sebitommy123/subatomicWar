@@ -14,12 +14,23 @@ class InternalServer {
 
     this.app.post("/startGame", this.handleStartGameRequest.bind(this));
 
+    this.app.post("/identify", (req, res) => res.send(this.identificationData));
+
     this.port = process.env.INTERNAL_PORT || 3001;
 
     this.app.listen(this.port);
 
     console.log(`Listening to internal traffic on port ${this.port}`);
   }
+
+  get identificationData() {
+    return {
+      name: "Game server for Commonwealth",
+      ip: "Unknown",
+      port: this.port,
+      region: "Unknown"
+    }
+  };
 
   handleStartGameRequest(req, res) {
 
@@ -35,7 +46,7 @@ class InternalServer {
 
 }
 
-function setGameStage() {
+function setGameStage() { // DEPRECATED, WE JUST TALK TO DATABASE DIRECTLY
   
   axios.get(`${mainServerAddress}/setGameStage`);
 
