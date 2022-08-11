@@ -93,7 +93,7 @@ function generateRandomLand(width, height) {
   }
 
   // iterate 7 times
-  for (let i = 0; i < 14; i++) {
+  for (let i = 0; i < 8; i++) {
     // choose a random position
     let x = Math.floor(Math.random() * width);
     let y = Math.floor(Math.random() * height);
