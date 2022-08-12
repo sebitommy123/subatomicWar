@@ -43,6 +43,12 @@ Passive clickable surfaces don't
  - make sure you cant stop a city razing if you have just a mine
  - Path finding is broken in some cases on the client, shows arrows through other people's territory and stuff that isn't your territory!
 
+Features DONE:
+ - improve lobby system
+	 - remove games and lobbies if they are empty
+	 - create lobby system
+ - separate server into two
+
 TODO
 
 Features:
@@ -63,8 +69,6 @@ Features:
  - show soldier alliegance somewhere
  - place unit / building / city shortcuts
  - improve lobby system
-	 - remove games and lobbies if they are empty
-	 - create lobby system
 	 - add private lobbies
  - add income per turn
  - add losing condition
@@ -79,7 +83,6 @@ Features:
 
 Refactoring:
  - split render up
- - separate server into two
 
 Waiting:
  - get sprites for more tiles, items and buildings
