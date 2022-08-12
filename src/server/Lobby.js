@@ -1,4 +1,5 @@
 const { nanoid } = require('nanoid');
+const { removeGame } = require('./ddb');
 const { updateStates } = require('./SocketWrapper');
 
 let lobbies;
@@ -84,6 +85,12 @@ class Lobby {
   removeSocket(socket) {
     
     this.sockets = this.sockets.filter(s => s.id != socket.id);
+
+    if (this.sockets.length === 0) {
+      this.removeLobby();
+
+      removeGame(this.GID);
+    }
     
     this.updateAllStates();
 

@@ -93,6 +93,8 @@ async function background() {
             ReturnValues: "ALL_OLD"
           });
 
+          // TODO remove players too, low prio
+
           console.log(`Deleted game ${gameId}, ${deletedGame.Attributes.playerCount.N} players affected`);
         });
 

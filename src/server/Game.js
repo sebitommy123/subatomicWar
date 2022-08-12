@@ -12,15 +12,18 @@ const { colors, pickRandom, filter2dArray } = require("./utils");
 const { isAdjescent, isIsolatedPosition, pathfind } = require("../shared/utils");
 const { Shop } = require("./Shop");
 const BotSocket = require("./BotSocket");
-const { setGameStage } = require("./ddb");
+const { setGameStage, removeGame } = require("./ddb");
 
 class Game {
 
-  constructor(playerSockets, globalGameId, config) {
+  constructor(playerSockets, lobbyId, config, globalGameId) {
 
     this.stage = "pregame";
 
+    this.dead = false;
+
     this.config = config;
+    this.lobbyId = lobbyId;
     this.globalGameId = globalGameId;
 
     this.gridDimensions = config.gridDimensions;
@@ -50,6 +53,20 @@ class Game {
 
     this.sendSyncUpdate();
 
+  }
+
+  handlePlayerDisconnect(player) {
+    let connectedPlayers = this.players.filter(p => p.connected).length;
+
+    if (connectedPlayers === 0) {
+      this.killGame();
+    }
+  }
+
+  killGame() {
+    this.dead = true;
+    games.splice(games.indexOf(this), 1);
+    removeGame(this.globalGameId);
   }
 
   getStartingPositions(playerId=null) {
@@ -221,7 +238,7 @@ class Game {
       this.sendSyncUpdate();
     }
 
-    setTimeout(this.botLoop.bind(this), 100);
+    if (!this.dead) setTimeout(this.botLoop.bind(this), 100);
 
   }
 
@@ -546,7 +563,7 @@ class Game {
 
     this.sendSyncUpdate();
 
-    setTimeout(this.tickGame.bind(this), this.config.dayLength);
+    if (!this.dead) setTimeout(this.tickGame.bind(this), this.config.dayLength);
 
   }
 
@@ -761,12 +778,13 @@ function startGameFromLobby(lobby) {
   const game = new Game(
     lobby.sockets,
     lobby.id, 
-    lobby.config);
+    lobby.config,
+    lobby.GID);
 
   games.push(game);
 
   // Update stage on database so it no longer shows up in the main menu
-  setGameStage("started");
+  setGameStage(game.globalGameId, "started");
 
   lobby.removeLobby();
 

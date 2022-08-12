@@ -20,6 +20,13 @@ class Player {
     this.color = color;
 
     this.startingPos = null;
+
+    this.connected = true;
+
+    this.socket.onDisconnect(() => {
+      this.connected = false;
+      this.game.handlePlayerDisconnect(this);
+    });
   }
 
   canAfford(cost) {

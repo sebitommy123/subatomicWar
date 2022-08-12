@@ -44,6 +44,8 @@ async function registerServer(externalPort, internalPort) {
   const address = `${config.my_address}:${externalPort}`;
   const internalAddress = `${config.my_address}:${internalPort}`;
 
+  await cleanOrphanGames(address);
+
   let result = await p(ddb.putItem, {
     TableName: config.tableName,
     Item: {
@@ -117,7 +119,7 @@ async function setGameStage(gameId, stage) {
   const { serverAddress } = await getGameById(gameId); //We get our own server address... We have this! TODO
 
   await p(ddb.updateItem, {
-    TableName: config.ddbTableName,
+    TableName: config.tableName,
     Key: {
       "PK": {"S": `Server-${serverAddress}`},
       "SK": {"S": `Game-${gameId}`},
@@ -126,6 +128,52 @@ async function setGameStage(gameId, stage) {
     ExpressionAttributeValues: {
       ":stage": {"S": stage}
     },
+  });
+}
+
+async function removeGame(gameId) {
+  const { serverAddress } = await getGameById(gameId); // We get our own server address... We have this! TODO
+
+  await p(ddb.deleteItem, {
+    TableName: config.tableName,
+    Key: {
+      "PK": {"S": `Server-${serverAddress}`},
+      "SK": {"S": `Game-${gameId}`},
+    }
+  });
+
+  // TODO remove players too, low prio
+}
+
+async function cleanOrphanGames(serverAddress) {
+  console.log("Finding all orphaned games...");
+  const games = await p(ddb.scan, {
+    ProjectionExpression: "GSI1PK",
+    TableName: config.tableName,
+    IndexName: "Games",
+    FilterExpression: "PK = :serverAddress",
+    ExpressionAttributeValues: {
+      ":serverAddress": { S: `Server-${serverAddress}` },
+    }
+  });
+
+  console.log(`${games.Items.length} orphan games found for ${serverAddress}`);
+
+  games.Items.forEach(async game => {
+    const gameId = game.GSI1PK.S.substring(5);
+
+    const deletedGame = await p(ddb.deleteItem, {
+      TableName: config.tableName,
+      Key: {
+        "PK": {"S": `Server-${serverAddress}`},
+        "SK": {"S": `Game-${gameId}`},
+      },
+      ReturnValues: "ALL_OLD"
+    });
+
+    // TODO remove players too, low prio
+
+    console.log(`Deleted game ${gameId}, ${deletedGame.Attributes.playerCount.N} players affected`);
   });
 }
 
@@ -145,5 +193,6 @@ function p(func, config) {
 module.exports = {
   registerServer,
   getUserBySession,
-  setGameStage
+  setGameStage,
+  removeGame
 };
