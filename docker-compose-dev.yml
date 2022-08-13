@@ -1,0 +1,84 @@
+version: "3.9"
+services:
+  globalserver:
+    build: 
+      context: .
+      dockerfile: docker/GlobalServer.Dockerfile
+    environment:
+      - PORT=$GlobalServer
+      - MY_ENDPOINT=$LocalhostAlias
+      - CLIENTORIGIN=$CLIENTORIGIN
+      - REGIONS=$GlobalServerRegions
+    ports:
+      - "$GlobalServer:$GlobalServer"
+  mainserver:
+    build:
+      context: .
+      dockerfile: docker/MainServer.Dockerfile
+    environment:
+      - PORT=${MainServerFromClient}
+      - CLIENTORIGIN=$CLIENTORIGIN
+      - INTERNAL_PORT=${MainServerFromGame}
+      - REGION=North America
+      - MY_ADDRESS=${LocalhostAlias}
+      - AWS_REGION=localhost
+      - DDB_ENDPOINT=${LocalhostAlias}:${DynamoDBLocal}
+      - DDB_TABLE_NAME=$TableName
+      - AWS_ACCESS_KEY_ID=$AccessKey
+      - AWS_SECRET_ACCESS_KEY=$SecretAccessKey
+    ports:
+      - "${MainServerFromClient}:${MainServerFromClient}"
+      - "${MainServerFromGame}:${MainServerFromGame}"
+    depends_on:
+      - dynamodblocal
+  dynamodblocal:
+    image: openjdk:11
+    command: java -D"java.library.path=./dynamodbLocal/DynamoDBLocal_lib" -jar dynamodbLocal/DynamoDBLocal.jar -port ${DynamoDBLocal}
+    working_dir: /usr/src/app
+    volumes:
+      - ./:/usr/src/app
+    ports:
+      - "${DynamoDBLocal}:${DynamoDBLocal}"
+  servesite:
+    image: node:14
+    command: node src/serveClient/index.js
+    working_dir: /usr/src/app
+    volumes:
+      - ./:/usr/src/app
+    environment:
+      - PORT=${ServeSite}
+      - NODE_ENV=development
+    ports:
+      - "${ServeSite}:${ServeSite}"
+  background:
+    build:
+      context: .
+      dockerfile: docker/Background.Dockerfile
+    environment:
+      - AWS_REGION=localhost
+      - DDB_ENDPOINT=${LocalhostAlias}:${DynamoDBLocal}
+      - DDB_TABLE_NAME=$TableName
+      - AWS_ACCESS_KEY_ID=$AccessKey
+      - AWS_SECRET_ACCESS_KEY=$SecretAccessKey
+    depends_on:
+      - dynamodblocal
+  gameserver:
+    build:
+      context: .
+      dockerfile: docker/GameServer.Dockerfile
+    environment:
+      - PORT=${GameServerFromClient}
+      - CLIENTORIGIN=$CLIENTORIGIN
+      - INTERNAL_PORT=${GameServerFromMain}
+      - MAIN_SERVER_ADDRESS=${LocalhostAlias}:${MainServerFromGame}
+      - MY_ADDRESS=${LocalhostAliasWS}:${GameServerFromClient}
+      - MY_INTERNAL_ADDRESS=${LocalhostAlias}:${GameServerFromMain}
+      - AWS_REGION=localhost
+      - DDB_ENDPOINT=${LocalhostAlias}:${DynamoDBLocal}
+      - DDB_TABLE_NAME=$TableName
+      - AWS_ACCESS_KEY_ID=$AccessKey
+      - AWS_SECRET_ACCESS_KEY=$SecretAccessKey
+    ports:
+      - "${GameServerFromClient}:${GameServerFromClient}"
+      - "${GameServerFromMain}:${GameServerFromMain}"
+    

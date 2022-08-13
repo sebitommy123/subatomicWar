@@ -14,7 +14,7 @@ export function connectToGameServer(callback) {
 
   const { gameServerAddress } = getInternalState();
 
-  socket = io(`${socketProtocol}://${gameServerAddress}`, { reconnection: false });
+  socket = io(`${gameServerAddress}`, { reconnection: false });
 
   socket.on('connect', () => {
     console.log('Connected to server!');

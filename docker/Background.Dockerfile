@@ -7,10 +7,7 @@ RUN npm ci
 
 COPY . .
 
-RUN npm run build
+EXPOSE 8080
+ENV PORT=8080
 
-EXPOSE 3002
-
-ENV PORT=3002
-
-CMD [ "npm", "run", "start" ]
+CMD [ "node", "src/background/index.js" ]

@@ -16,6 +16,7 @@ if (process.argv.length == 2) {
 
   config = {
     my_address: process.env.MY_ADDRESS,
+    my_internal_address: process.env.MY_INTERNAL_ADDRESS,
     endpoint: process.env.DDB_ENDPOINT,
     region: process.env.AWS_REGION,
     tableName: process.env.DDB_TABLE_NAME || "Game",
@@ -25,7 +26,7 @@ if (process.argv.length == 2) {
 } else {
 
   config = {
-    my_address: "localho.st",
+    my_address: "ws://localho.st:8042",
     endpoint: "http://localhost:8042",
     region: 'localhost',
     tableName: 'Game',
@@ -39,20 +40,17 @@ var ddb = new AWS.DynamoDB();
 
 console.log("Connected to DynamoDB");
 
-async function registerServer(externalPort, internalPort) {
+async function registerServer() {
 
-  const address = `${config.my_address}:${externalPort}`;
-  const internalAddress = `${config.my_address}:${internalPort}`;
-
-  await cleanOrphanGames(address);
+  await cleanOrphanGames(config.my_address);
 
   let result = await p(ddb.putItem, {
     TableName: config.tableName,
     Item: {
-      "PK": {"S": `Server-${address}`},
+      "PK": {"S": `Server-${config.my_address}`},
       "SK": {"S": `Metadata`},
       "games": {"N": "0"},
-      "internalAddress": {"S": internalAddress},
+      "internalAddress": {"S": config.my_internal_address},
     },
   });
 

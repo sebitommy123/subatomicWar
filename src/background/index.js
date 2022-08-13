@@ -18,7 +18,6 @@ if (process.argv.length == 2) {
   }
 
   config = {
-    my_address: process.env.MY_ADDRESS,
     endpoint: process.env.DDB_ENDPOINT,
     region: process.env.AWS_REGION,
     tableName: process.env.DDB_TABLE_NAME || "Game",
@@ -28,7 +27,6 @@ if (process.argv.length == 2) {
 } else {
 
   config = {
-    my_address: "localho.st",
     endpoint: "http://localhost:8042",
     region: 'localhost',
     tableName: 'Game',
@@ -64,7 +62,7 @@ async function background() {
       let internalAddress = gameServer.internalAddress.S;
 
       try {
-        let data = await axios.post(`http://${internalAddress}/identify`, {}, {timeout: 2000});
+        let data = await axios.post(`${internalAddress}/identify`, {}, {timeout: 2000});
         console.log(`UP ${serverAddress}`);
       } catch (e) { //Server down!
         console.log(`DOWN ${serverAddress}`);

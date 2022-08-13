@@ -10,17 +10,18 @@
     "serveSite": "cross-env NODE_ENV=development PORT=8000 node src/serveClient/index.js",
     "dev:gameServer": "cross-env CLIENTORIGIN=http://localho.st:8000 PORT=3000 INTERNAL_PORT=3042 MAIN_SERVER_ADDRESS=localho.st:3011 node src/server/index.js develop",
     "dev:mainServer": "cross-env NODE_ENV=development CLIENTORIGIN=http://localho.st:8000 PORT=3010 INTERNAL_PORT=3011 node src/mainServer/index.js",
-    "dev:globalServer": "cross-env NODE_ENV=development DEV_MAIN_ADDR=http://localho.st:3010 CLIENTORIGIN=http://localho.st:8000 PORT=3002 node src/globalServer/index.js",
+    "dev:globalServer": "cross-env REGIONS=\"[{\\\"name\\\":\\\"Localhost\\\",\\\"mainServers\\\":[\\\"http://localho.st:3010\\\"]}]\" CLIENTORIGIN=http://localho.st:8000 PORT=3002 node src/globalServer/index.js",
     "pro:mainServer": "cross-env NODE_ENV=production node src/mainServer/index.js",
     "pro:gameServer": "cross-env node src/server/index.js",
-    "pro:globalServer": "cross-env NODE_ENV=production CLIENTORIGIN=http://localho.st:8000 PORT=3002 node src/globalServer/index.js",
     "dev:background": "node src/background/index.js develop",
     "dev:gameServer:buildImage": "docker build . -t commonwealth_game_server -f GameServer.Dockerfile",
     "dev:mainServer:buildImage": "docker build . -t commonwealth_main_server -f MainServer.Dockerfile",
     "dev:gameServer:runImage": "docker run -p 3000:3000 -p 3042:3042 commonwealth_game_server",
     "dev:dynamodb": "java -D\"java.library.path=./dynamodbLocal/DynamoDBLocal_lib\" -jar dynamodbLocal/DynamoDBLocal.jar -port 8042",
     "dev:dynamodb:wipe": "aws dynamodb delete-table --table-name Game --endpoint http://localhost:8042 --region localhost",
-    "dev": "echo [warning] If dynamodb does not initialize quickly enough, gameServer and mainServer fail to start. && concurrently -n dynamodb,gameServer,mainServer,globalServer,serveSite,background \"npm run dev:dynamodb\" \"npm run dev:gameServer\" \"npm run dev:mainServer\" \"npm run dev:globalServer\" \"npm run serveSite\" \"npm run dev:background\""
+    "dev": "echo [warning] If dynamodb does not initialize quickly enough, gameServer and mainServer fail to start. && concurrently -n dynamodb,gameServer,mainServer,globalServer,serveSite,background \"npm run dev:dynamodb\" \"npm run dev:gameServer\" \"npm run dev:mainServer\" \"npm run dev:globalServer\" \"npm run serveSite\" \"npm run dev:background\"",
+    "dev:docker": "docker compose -f docker-compose-dev.yml --env-file docker/.env.dev up",
+    "prod:buildImages": "docker compose -f docker-compose-build.yml build && docker images"
   },
   "repository": {
     "type": "git",

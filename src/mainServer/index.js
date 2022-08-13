@@ -30,8 +30,8 @@ if (mode == "production") {
   }
 
   config = {...config,
-    ip: process.env.MY_IP || "unknown",
-    region: process.env.AWS_REGION,
+    endpoint: process.env.MY_ADDRESS || "unknown",
+    region: process.env.REGION,
     ddbEndpoint: process.env.DDB_ENDPOINT,
     ddbRegion: process.env.AWS_REGION,
     ddbTableName: process.env.DDB_TABLE_NAME || "Game",
@@ -41,7 +41,7 @@ if (mode == "production") {
 } else if (mode == "development") {
 
   config = {...config,
-    ip: 'localhost',
+    endpoint: 'localhost',
     region: "North America",
     ddbEndpoint: "http://localhost:8042",
     ddbRegion: 'localhost',
@@ -66,7 +66,7 @@ app.get('/identify', (req, res) => {
 
   res.send({
     name: "Main server for Commonwealth",
-    ip: config.ip,
+    endpoint: config.endpoint,
     port: config.port,
     region: config.region
   });
@@ -354,7 +354,7 @@ async function addGameToServer(gameId, serverAddr, serverInternalAddr, gameName)
   console.log(`Telling game server at address ${serverAddr} through ${serverInternalAddr} to add game ${gameId}`);
 
   try {
-    await axios.post(`http://${serverInternalAddr}/startGame`, {
+    await axios.post(`${serverInternalAddr}/startGame`, {
       gameId,
     }, {timeout: 2000});
   } catch (e) {

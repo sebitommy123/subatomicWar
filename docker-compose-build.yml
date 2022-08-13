@@ -1,0 +1,18 @@
+version: "3.9"
+services:
+  globalserver:
+    build: 
+      context: .
+      dockerfile: docker/GlobalServer.Dockerfile
+  mainserver:
+    build:
+      context: .
+      dockerfile: docker/MainServer.Dockerfile
+  background:
+    build:
+      context: .
+      dockerfile: docker/Background.Dockerfile
+  gameserver:
+    build:
+      context: .
+      dockerfile: docker/GameServer.Dockerfile
