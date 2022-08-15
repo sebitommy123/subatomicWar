@@ -23,9 +23,9 @@ The main server responds with HTTP traffic:
  - `CLIENTORIGIN`: The domains to allow traffic from for external clients (users)
  - `INTERNAL_PORT`: The port to listen to traffic from internal clients (game servers)
  - `REGION`: The "game" region that the main server represents (e.g. North America)
- - `MY_ENDPOINT`: The public address of the machine
+ - `MY_ADDRESS`: The public address of the machine
  - `AWS_REGION`: The AWS region in which to search for the DynamoDB database
- - `DDB_ENDPOINT`: The endpoint of the DB
+ - `DDB_ENDPOINT`: The endpoint of the DB, used for development, usually null
  - `DDB_TABLE_NAME`: Name of DB table
  - `AWS_ACCESS_KEY_ID`: Access key of IAM Role
  - `AWS_SECRET_ACCESS_KEY`: Secret access key of IAM Role

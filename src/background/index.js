@@ -6,7 +6,7 @@ const FREQUENCY = 10000/*ms*/;
 let config;
 if (process.argv.length == 2) {
 
-  if (["AWS_REGION", "DDB_ENDPOINT", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"].filter(key => {
+  if (["AWS_REGION", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"].filter(key => {
     if (!process.env[key]) {
       console.error(`Missing environment variable ${key}`);
       return true;

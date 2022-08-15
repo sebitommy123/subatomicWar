@@ -21,7 +21,7 @@
     "dev:dynamodb:wipe": "aws dynamodb delete-table --table-name Game --endpoint http://localhost:8042 --region localhost",
     "dev": "echo [warning] If dynamodb does not initialize quickly enough, gameServer and mainServer fail to start. && concurrently -n dynamodb,gameServer,mainServer,globalServer,serveSite,background \"npm run dev:dynamodb\" \"npm run dev:gameServer\" \"npm run dev:mainServer\" \"npm run dev:globalServer\" \"npm run serveSite\" \"npm run dev:background\"",
     "dev:docker": "docker compose -f docker-compose-dev.yml --env-file docker/.env.dev up",
-    "prod:buildImages": "docker compose -f docker-compose-build.yml build && docker images"
+    "buildImages": "docker compose -f docker-compose-build.yml build && docker images"
   },
   "repository": {
     "type": "git",
@@ -60,6 +60,7 @@
     "@babel/preset-react": "^7.16.5",
     "babel-eslint": "^10.1.0",
     "babel-loader": "^8.2.3",
+    "copy-webpack-plugin": "^11.0.0",
     "cross-env": "^7.0.3",
     "css-loader": "^6.5.1",
     "css-minimizer-webpack-plugin": "^3.3.1",

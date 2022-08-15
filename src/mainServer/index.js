@@ -18,7 +18,7 @@ let config = {
 
 if (mode == "production") {
 
-  if (["PORT", "AWS_REGION", "DDB_ENDPOINT", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"].filter(key => {
+  if (["PORT", "AWS_REGION", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"].filter(key => {
     if (!process.env[key]) {
       console.error(`Missing environment variable ${key}`);
       return true;
