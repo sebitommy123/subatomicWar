@@ -11,7 +11,7 @@ import { ensureServerSync } from './utils/general';
 import { partialSetup } from './partialSetup';
 import axios from 'axios';
 
-const GLOBAL_SERVER_ENDPOINT = "http://localho.st:3002";
+const GLOBAL_SERVER_ENDPOINT = GLOBAL_SERVER_ENDPOINT_PASSED_IN_FROM_WEBPACK;
 
 // initialize the state to something the app won't crash with
 handleNewState(Constants.initialState);

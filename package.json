@@ -6,6 +6,7 @@
   "private": true,
   "scripts": {
     "buildSite": "webpack --config webpack.prod.js",
+    "deploySite": "npm run buildSite && firebase deploy",
     "deploy": "git branch -f deploy main && git push -f origin deploy",
     "serveSite": "cross-env NODE_ENV=development PORT=8000 node src/serveClient/index.js",
     "dev:gameServer": "cross-env CLIENTORIGIN=http://localho.st:8000 PORT=3000 INTERNAL_PORT=3042 MAIN_SERVER_ADDRESS=localho.st:3011 node src/server/index.js develop",
