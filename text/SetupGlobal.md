@@ -41,7 +41,7 @@ Run
 ### Run the docker container
 
  1. Pull the container `docker pull sebitommy123/global_server:latest`
- 2. Run it `docker run --env MY_ENDPOINT=http://13.39.17.163:3002 --env PORT=3002 --env CLIENTORIGIN=http://zubatomic.com:8000 --env "REGIONS=[{\"name\":\"Europe\",\"mainServers\":[\"http://13.39.17.163:3010\"]}]" -p 3002:3002 sebitommy123/global_server:latest` replacing the values with the desired ones.
+ 2. Run it `docker run --env MY_ENDPOINT=http://13.39.17.163:3002 --env PORT=3002 --env CLIENTORIGIN=http://zubatomic.com:8000 --env "REGIONS=[{\"name\":\"Europe\",\"mainServers\":[\"http://13.39.17.163:3010\"]}]" -p 3002:3002 -v "/etc/letsencrypt:/etc/letsencrypt" sebitommy123/global_server:latest` replacing the values with the desired ones.
  3. Test it by sending a `GET /identify` to see if it works, e.g. navigate to `http://13.39.17.163:3002/identify`
 
 Done!

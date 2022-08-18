@@ -22,7 +22,8 @@
     "dev:dynamodb:wipe": "aws dynamodb delete-table --table-name Game --endpoint http://localhost:8042 --region localhost",
     "dev": "echo [warning] If dynamodb does not initialize quickly enough, gameServer and mainServer fail to start. && concurrently -n dynamodb,gameServer,mainServer,globalServer,serveSite,background \"npm run dev:dynamodb\" \"npm run dev:gameServer\" \"npm run dev:mainServer\" \"npm run dev:globalServer\" \"npm run serveSite\" \"npm run dev:background\"",
     "dev:docker": "docker compose -f docker-compose-dev.yml --env-file docker/.env.dev up",
-    "buildImages": "docker compose -f docker-compose-build.yml build && docker images"
+    "buildImages": "docker compose -f docker-compose-build.yml build && docker images",
+    "buildAndPushImages": "npm run buildImages && docker tag subatomicwar_background sebitommy123/background && docker tag subatomicwar_mainserver sebitommy123/main_server && docker tag subatomicwar_globalserver sebitommy123/global_server && docker tag subatomicwar_gameserver sebitommy123/game_server && docker push sebitommy123/main_server:latest && docker push sebitommy123/game_server:latest && docker push sebitommy123/global_server:latest && docker push sebitommy123/background:latest"
   },
   "repository": {
     "type": "git",

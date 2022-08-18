@@ -1,6 +1,11 @@
 var express = require('express');
 var cors = require("cors");
-var app = express();
+var { usingHttps, expressSSLConfig } = require("../shared/ssl");
+var https = require("https");
+
+const app = express();
+let listener = app;
+if (usingHttps) listener = https.createServer(expressSSLConfig, app);
 
 let config = {
   endpoint: process.env.MY_ENDPOINT || "unknown",
@@ -26,6 +31,6 @@ app.get('/getRegions', (req, res) => {
   res.send(config.regions);
 });
 
-app.listen(config.port, () => {
+listener.listen(config.port, () => {
   console.log(`Listening on port ${config.port}`);
 });

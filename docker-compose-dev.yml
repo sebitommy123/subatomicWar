@@ -1,9 +1,11 @@
 version: "3.9"
 services:
   globalserver:
-    build: 
-      context: .
-      dockerfile: docker/GlobalServer.Dockerfile
+    image: node:14
+    command: node src/globalServer/index.js
+    working_dir: /usr/src/app
+    volumes:
+      - ./:/usr/src/app
     environment:
       - PORT=$GlobalServer
       - MY_ENDPOINT=$LocalhostAlias
@@ -12,9 +14,11 @@ services:
     ports:
       - "$GlobalServer:$GlobalServer"
   mainserver:
-    build:
-      context: .
-      dockerfile: docker/MainServer.Dockerfile
+    image: node:14
+    command: node src/mainServer/index.js
+    working_dir: /usr/src/app
+    volumes:
+      - ./:/usr/src/app
     environment:
       - PORT=${MainServerFromClient}
       - CLIENTORIGIN=$CLIENTORIGIN
@@ -51,9 +55,11 @@ services:
     ports:
       - "${ServeSite}:${ServeSite}"
   background:
-    build:
-      context: .
-      dockerfile: docker/Background.Dockerfile
+    image: node:14
+    command: node src/background/index.js
+    working_dir: /usr/src/app
+    volumes:
+      - ./:/usr/src/app
     environment:
       - AWS_REGION=localhost
       - DDB_ENDPOINT=${LocalhostAlias}:${DynamoDBLocal}
@@ -63,9 +69,11 @@ services:
     depends_on:
       - dynamodblocal
   gameserver:
-    build:
-      context: .
-      dockerfile: docker/GameServer.Dockerfile
+    image: node:14
+    command: node src/server/index.js
+    working_dir: /usr/src/app
+    volumes:
+      - ./:/usr/src/app
     environment:
       - PORT=${GameServerFromClient}
       - CLIENTORIGIN=$CLIENTORIGIN

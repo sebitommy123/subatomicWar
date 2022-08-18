@@ -16,7 +16,10 @@ You must dockerize the game server, the main server and the background.
 
 You may find they are already dockerized at `docker.io/sebitommy123/background`, `docker.io/sebitommy123/main_server`, `docker.io/sebitommy123/game_server`
 
-If not, build all containers by running `npm run buildImages`
+If not, run `npm run buildAndPushImages`. This command does the following: (in case it doesn't work, follow these instructions)
+
+-----
+Build all containers by running `npm run buildImages`
 
 Then, push each server image to the container registry as you otherwise would:
  - Run `docker images` and find the image ID of the global server image you just created
@@ -24,6 +27,7 @@ Then, push each server image to the container registry as you otherwise would:
    - This may work: `docker tag subatomicwar_background sebitommy123/background ; docker tag subatomicwar_mainserver sebitommy123/main_server ; docker tag subatomicwar_globalserver sebitommy123/global_server ; docker tag subatomicwar_gameserver sebitommy123/game_server`
  - Run `docker push sebitommy123/main_server:latest` to push it to the `sebitommy123` docker hub container registry. (Again, replacing main_server)
    - This may work: `docker push sebitommy123/main_server:latest ; docker push sebitommy123/game_server:latest ; docker push sebitommy123/global_server:latest ; docker push sebitommy123/background:latest`
+-----
 
 ## Create the DynamoDB database
 
