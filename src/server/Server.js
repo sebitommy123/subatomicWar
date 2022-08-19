@@ -7,6 +7,9 @@ const { wrapSocket } = require('./SocketWrapper');
 
 const Constants = require("../shared/constants.js");
 
+var { usingHttps, expressSSLConfig } = require("../shared/ssl");
+var https = require("https");
+
 class Server {
 
   constructor (handleSocketConnection) {
@@ -25,9 +28,12 @@ class Server {
       console.log(`Serving client on ${this.port}`);
     }
 
+    this.listener = this.app;
+    if (usingHttps) this.listener = https.createServer(expressSSLConfig, app);
+
     // Listen on port
     this.port = process.env.PORT || 3000;
-    this.server = this.app.listen(this.port);
+    this.server = this.listener.listen(this.port);
 
     const clientOrigin = process.env.CLIENTORIGIN || "https://commonwealth.io";
     

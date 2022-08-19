@@ -16,6 +16,8 @@ export function connectToGameServer(callback) {
 
   socket = io(`${gameServerAddress}`, { reconnection: false });
 
+  console.log(`Attempting to connect to ${gameServerAddress}`);
+
   socket.on('connect', () => {
     console.log('Connected to server!');
 
@@ -32,6 +34,10 @@ export function connectToGameServer(callback) {
     });
 
     callback();
+  });
+
+  socket.on("connect_error", (err) => {
+    console.log(`connect_error due to ${err.message}`);
   });
 
 }

@@ -4,6 +4,11 @@ var appInternal = express(); // not used
 const { v4: uuid } = require('uuid');
 const axios = require("axios").default;
 var cors = require("cors");
+var { usingHttps, expressSSLConfig } = require("../shared/ssl");
+var https = require("https");
+
+let listener = app;
+if (usingHttps) listener = https.createServer(expressSSLConfig, app);
 
 let mode = (process.env.NODE_ENV === "development") ? "development" : "production";
 
@@ -472,7 +477,7 @@ function respondWithError(resObject, err) {
   return null;
 }
 
-app.listen(config.port, () => {
+listener.listen(config.port, () => {
   console.log(`Listening on port ${config.port}`);
 });
 
